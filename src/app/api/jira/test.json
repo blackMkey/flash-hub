@@ -1,0 +1,310 @@
+{
+  "issueUpdates": [
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2595"
+        },
+        "summary": "[DD] [GET_DPMS] Create UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Create",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [GET_DPMS] Create UC",
+        "assignee": {
+          "name": "thanhbc1"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    },
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2595"
+        },
+        "summary": "[DD] [GET_DPMS] Review UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Review",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [GET_DPMS] Review UC",
+        "assignee": {
+          "name": "thanhbc1"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    },
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2595"
+        },
+        "summary": "[DD] [GET_DPMS] Update UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Correct",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [GET_DPMS] Update UC",
+        "assignee": {
+          "name": "thanhbc1"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    },
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2596"
+        },
+        "summary": "[DD] [HLR_HLAP] Create UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Create",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [HLR_HLAP] Create UC",
+        "assignee": {
+          "name": "hainv21"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    },
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2596"
+        },
+        "summary": "[DD] [HLR_HLAP] Review UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Review",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [HLR_HLAP] Review UC",
+        "assignee": {
+          "name": "hainv21"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    },
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2596"
+        },
+        "summary": "[DD] [HLR_HLAP] Update UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Correct",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [HLR_HLAP] Update UC",
+        "assignee": {
+          "name": "hainv21"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    },
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2597"
+        },
+        "summary": "[DD] [DOCU_EVENT_MSG] Create UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Create",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [DOCU_EVENT_MSG] Create UC",
+        "assignee": {
+          "name": "anhnd49"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    },
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2597"
+        },
+        "summary": "[DD] [DOCU_EVENT_MSG] Review UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Review",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [DOCU_EVENT_MSG] Review UC",
+        "assignee": {
+          "name": "anhnd49"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    },
+    {
+      "fields": {
+        "project": {
+          "key": "FHMPSATIB2JA"
+        },
+        "parent": {
+          "key": "FHMPSATIB2JA-2597"
+        },
+        "summary": "[DD] [DOCU_EVENT_MSG] Update UC",
+        "issuetype": {
+          "id": "10003"
+        },
+        "components": [
+          {
+            "id": "89486"
+          }
+        ],
+        "customfield_10220": "3827093",
+        "customfield_12506": "Correct",
+        "customfield_10212": "2025-10-01T09:00:00.000+0000",
+        "duedate": "2025-10-31",
+        "timetracking": {
+          "originalEstimate": "1m",
+          "remainingEstimate": "1m"
+        },
+        "description": "[DD] [DOCU_EVENT_MSG] Update UC",
+        "assignee": {
+          "name": "anhnd49"
+        },
+        "reporter": {
+          "name": "tuantd23"
+        }
+      }
+    }
+  ]
+}
