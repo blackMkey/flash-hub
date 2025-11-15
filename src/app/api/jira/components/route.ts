@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
@@ -18,12 +18,14 @@ export async function GET(request: NextRequest) {
 
     // Get token from session cookie
     const auth = requireAuth(request);
+
     if ("error" in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     console.log(`📦 Fetching components for project ID: ${projectId}`);
     const myHeaders = new Headers();
+
     myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
@@ -39,9 +41,11 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+
       console.error(
         `❌ Failed to fetch components: ${response.status} - ${errorText}`
       );
+
       return NextResponse.json(
         { error: "Failed to fetch components" },
         { status: response.status }
@@ -49,6 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     const componentsData = await response.json();
+
     console.log(
       `✅ Successfully fetched ${componentsData.values?.length || 0} components`
     );
@@ -59,6 +64,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("❌ Components fetch error:", error);
+
     return NextResponse.json(
       {
         error: "Internal server error",

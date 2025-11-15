@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
@@ -49,38 +49,38 @@ interface JiraBulkIssueRequest {
   }>;
 }
 
-interface BulkCreateSuccessItem {
-  index: number;
-  subtask: {
-    id: string;
-    key: string;
-    self: string;
-  };
-  key: string;
-  summary: string;
-}
+// interface BulkCreateSuccessItem {
+//   index: number;
+//   subtask: {
+//     id: string;
+//     key: string;
+//     self: string;
+//   };
+//   key: string;
+//   summary: string;
+// }
 
-interface BulkCreateFailedItem {
-  index: number;
-  summary: string;
-  error: string;
-}
+// interface BulkCreateFailedItem {
+//   index: number;
+//   summary: string;
+//   error: string;
+// }
 
-interface JiraBulkIssue {
-  id: string;
-  key: string;
-  self: string;
-}
+// interface JiraBulkIssue {
+//   id: string;
+//   key: string;
+//   self: string;
+// }
 
-interface JiraBulkError {
-  status: number;
-  failedElementNumber: number;
-  elementErrors?: {
-    errorMessages: Array<string>;
-    errors: { [key: string]: string };
-  };
-  message?: string;
-}
+// interface JiraBulkError {
+//   status: number;
+//   failedElementNumber: number;
+//   elementErrors?: {
+//     errorMessages: Array<string>;
+//     errors: { [key: string]: string };
+//   };
+//   message?: string;
+// }
 
 export async function POST(request: NextRequest) {
   try {
@@ -104,11 +104,13 @@ export async function POST(request: NextRequest) {
 
     // Get token from session cookie
     const auth = requireAuth(request);
+
     if ("error" in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const myHeaders = new Headers();
+
     myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
@@ -125,9 +127,11 @@ export async function POST(request: NextRequest) {
 
     if (!metaResponse.ok) {
       const errorText = await metaResponse.text();
+
       console.error(
         `❌ Failed to fetch issue types: ${metaResponse.status} - ${errorText}`
       );
+
       return NextResponse.json(
         { error: "Failed to fetch project issue types" },
         { status: metaResponse.status }
@@ -138,6 +142,7 @@ export async function POST(request: NextRequest) {
 
     // Find subtask issue type
     let subtaskTypeId = null;
+
     for (const issueType of issueTypesData.values || []) {
       if (issueType.subtask === true) {
         subtaskTypeId = issueType.id;
@@ -228,6 +233,7 @@ export async function POST(request: NextRequest) {
       `🚀 Creating ${subtasks.length} subtasks in bulk for parent: ${parentKey}`
     );
     console.log(`📦 Bulk payload:`, JSON.stringify(bulkPayload, null, 2));
+
     return NextResponse.json(
       {
         error: "Internal server error",
@@ -343,6 +349,7 @@ export async function POST(request: NextRequest) {
     // }
   } catch (error) {
     console.error("❌ Fail to connect to Jira API", error);
+
     return NextResponse.json(
       {
         error: "Internal server error",

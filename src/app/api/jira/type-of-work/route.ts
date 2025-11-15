@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
@@ -19,11 +19,13 @@ export async function GET(request: NextRequest) {
 
     // Get token from session cookie
     const auth = requireAuth(request);
+
     if ("error" in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const myHeaders = new Headers();
+
     myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
@@ -43,6 +45,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+
       console.error(
         `❌ Failed to fetch type of work: ${response.status} - ${errorText}`
       );
@@ -54,6 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     const typeOfWorkData = await response.json();
+
     console.log(`✅ Successfully fetched type of work options`);
 
     return NextResponse.json({

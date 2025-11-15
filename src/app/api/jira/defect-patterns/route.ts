@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
@@ -45,6 +45,7 @@ export async function GET(
 
     // Get token from session cookie
     const auth = requireAuth(request);
+
     if ("error" in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
@@ -53,6 +54,7 @@ export async function GET(
       `🔗 Fetching defect patterns for issueId: ${issueId}, projectId: ${projectId}`
     );
     const myHeaders = new Headers();
+
     myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
@@ -69,9 +71,11 @@ export async function GET(
 
     if (!response.ok) {
       const errorText = await response.text();
+
       console.error(
         `❌ Failed to fetch defect patterns: ${response.status} - ${errorText}`
       );
+
       return NextResponse.json(
         { error: "Failed to fetch defect patterns", details: errorText },
         { status: response.status }
@@ -79,13 +83,16 @@ export async function GET(
     }
 
     const defectPatterns = await response.json();
+
     console.log(`✅ Successfully fetched defect patterns data`);
 
     // Extract product options from the nested structure: result.map.Product.options
     let productOptions: ProductOption[] = [];
+
     try {
       if (defectPatterns?.map?.Product?.options) {
         const optionsObject = defectPatterns.map.Product.options;
+
         // Convert object to array of {id, value, label} format
         productOptions = Object.entries(optionsObject).map(([id, label]) => ({
           id,
@@ -110,6 +117,7 @@ export async function GET(
     });
   } catch (error) {
     console.error("❌ Defect patterns fetch error:", error);
+
     return NextResponse.json(
       {
         error: "Internal server error",

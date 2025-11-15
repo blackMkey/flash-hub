@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
-  Heading,
+  Box,
   Button,
   Flex,
-  Text,
+  Heading,
   Input,
   Spinner,
-  Box,
+  Text,
 } from "@chakra-ui/react";
 import Link from "next/link";
 import { useAuthStore } from "@/stores";

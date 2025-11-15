@@ -1,5 +1,5 @@
 // Middleware to extract and validate Jira token from session
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { sessionStore } from "./sessionStore";
 
 const COOKIE_NAME = "jira_session";
@@ -10,6 +10,7 @@ export function getJiraTokenFromRequest(request: NextRequest): string | null {
 
   if (!sessionId) {
     console.log("❌ No session cookie found");
+
     return null;
   }
 
@@ -18,6 +19,7 @@ export function getJiraTokenFromRequest(request: NextRequest): string | null {
 
   if (!token) {
     console.log("❌ Session invalid or expired");
+
     return null;
   }
 

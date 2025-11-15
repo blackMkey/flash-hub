@@ -21,6 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
               if (error instanceof Error && error.message.includes('4')) {
                 return false
               }
+
               return failureCount < 3
             },
           },

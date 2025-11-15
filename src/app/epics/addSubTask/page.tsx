@@ -1,29 +1,29 @@
 "use client";
 
 import {
-  Box,
-  Text,
-  Button,
-  Input,
-  Stack,
-  Flex,
-  Spinner,
-  Textarea,
   Badge,
+  Box,
+  Button,
+  createListCollection,
+  Flex,
+  Input,
   Select,
+  Spinner,
+  Stack,
+  Text,
+  Textarea,
 } from "@chakra-ui/react";
-import { useState, useEffect, Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAuthStore, useDataStore } from "@/stores";
 import { useRouter, useSearchParams } from "next/navigation";
 import { validateTimeTrackingFormat } from "@/utils/jiraDateUtils";
 import {
   useComponents,
-  useTypeOfWork,
   useCreateSubtask,
-  useEpic,
   useDefectPatterns,
+  useEpic,
+  useTypeOfWork,
 } from "@/services/jiraQueries";
-import { createListCollection } from "@chakra-ui/react";
 
 function AddSubTaskContent() {
   const router = useRouter();
@@ -87,6 +87,7 @@ function AddSubTaskContent() {
     // Split by space and take the first element to get the username part
     // e.g., "john at fpt dot com" -> ["john", "at", "fpt", "dot", "com"] -> "john"
     const parts = emailAddress.split(" ");
+
     return parts[0] || "";
   };
 
@@ -122,12 +123,15 @@ function AddSubTaskContent() {
     const plannedStartISO = new Date(now.getTime() + 60000)
       .toISOString()
       .slice(0, 16); // Add 1 minute
+
     setPlannedStart(plannedStartISO);
 
     // For date input: "2025-10-28"
     const tomorrow = new Date(now);
+
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dueDateISO = tomorrow.toISOString().slice(0, 10);
+
     setDueDate(dueDateISO);
 
     setOriginalEstimate("8h");
@@ -145,6 +149,7 @@ function AddSubTaskContent() {
         epicQueryError instanceof Error
           ? epicQueryError.message
           : "Failed to fetch epic";
+
       setEpicError(errorMessage);
     }
   }, [fetchedEpic, epicQueryError, setCurrentEpic, setEpicError]);
@@ -157,6 +162,7 @@ function AddSubTaskContent() {
         const assigneeUsername = extractUsernameFromEmail(
           currentEpic.assignee.emailAddress
         );
+
         setAssignee(assigneeUsername);
       }
 
@@ -165,6 +171,7 @@ function AddSubTaskContent() {
         const reporterUsername = extractUsernameFromEmail(
           currentEpic.reporter.emailAddress
         );
+
         setReporter(reporterUsername);
       }
     }
@@ -174,12 +181,14 @@ function AddSubTaskContent() {
     // If no parent key provided, redirect back to epics
     if (!parentKey) {
       router.push("/epics");
+
       return;
     }
 
     // If not connected, redirect to epics page
     if (!isConnected) {
       router.push("/epics");
+
       return;
     }
   }, [parentKey, isConnected, router]);
@@ -201,6 +210,7 @@ function AddSubTaskContent() {
       !remainingEstimate
     ) {
       setCreateError("Please fill in all required fields");
+
       return;
     }
 
@@ -212,6 +222,7 @@ function AddSubTaskContent() {
       setCreateError(
         'Time estimates must be in format like "8h", "2d", "1w 3d", etc.'
       );
+
       return;
     }
 
@@ -258,6 +269,7 @@ function AddSubTaskContent() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to create subtask";
+
       setCreateError(errorMessage);
     } finally {
       setIsCreating(false);

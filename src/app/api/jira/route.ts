@@ -1,5 +1,5 @@
 // Jira API proxy to handle CORS issues
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../libs/authMiddleware";
 
 const JIRA_BASE_URL =
@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
 
   // Get token from session cookie
   const auth = requireAuth(request);
+
   if ("error" in auth) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
   const jiraUrl = `${JIRA_BASE_URL}/rest/api/2/${endpoint}`;
 
   const myHeaders = new Headers();
+
   myHeaders.append("Authorization", "Bearer " + auth.token);
   myHeaders.append("Content-Type", "application/json");
   try {
@@ -39,7 +41,9 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+
       console.error(`❌ Jira API Error: ${response.status} - ${errorText}`);
+
       return NextResponse.json(
         {
           error: `Jira API Error: ${response.status} - ${response.statusText}`,
@@ -50,11 +54,13 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
+
     console.log(`✅ Successfully proxied Jira request`);
 
     return NextResponse.json(data);
   } catch (error) {
     console.error("❌ Proxy request failed:", error);
+
     return NextResponse.json(
       {
         error: "Failed to proxy request to Jira",
@@ -78,6 +84,7 @@ export async function POST(request: NextRequest) {
 
   // Get token from session cookie
   const auth = requireAuth(request);
+
   if ("error" in auth) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -90,6 +97,7 @@ export async function POST(request: NextRequest) {
     console.log(`🔗 Proxying POST request to: ${jiraUrl}`);
 
     const myHeaders = new Headers();
+
     myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
@@ -103,7 +111,9 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+
       console.error(`❌ Jira API Error: ${response.status} - ${errorText}`);
+
       return NextResponse.json(
         {
           error: `Jira API Error: ${response.status} - ${response.statusText}`,
@@ -114,11 +124,13 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+
     console.log(`✅ Successfully proxied POST Jira request`);
 
     return NextResponse.json(data);
   } catch (error) {
     console.error("❌ Proxy POST request failed:", error);
+
     return NextResponse.json(
       {
         error: "Failed to proxy POST request to Jira",

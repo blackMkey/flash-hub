@@ -1,6 +1,6 @@
 // Data Store - manages epic data, search history, and current selections
 import { create } from 'zustand'
-import { persist, devtools } from 'zustand/middleware'
+import { devtools, persist } from 'zustand/middleware'
 import { type JiraEpic } from '@/services/jiraFetchers'
 
 interface EpicSearchHistory {

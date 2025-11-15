@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
@@ -67,11 +67,13 @@ export async function POST(request: NextRequest) {
 
     // Get token from session cookie
     const auth = requireAuth(request);
+
     if ("error" in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const myHeaders = new Headers();
+
     myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
@@ -88,9 +90,11 @@ export async function POST(request: NextRequest) {
 
     if (!metaResponse.ok) {
       const errorText = await metaResponse.text();
+
       console.error(
         `❌ Failed to fetch issue types: ${metaResponse.status} - ${errorText}`
       );
+
       return NextResponse.json(
         { error: "Failed to fetch project issue types" },
         { status: metaResponse.status }
@@ -101,6 +105,7 @@ export async function POST(request: NextRequest) {
 
     // Find subtask issue type
     let subtaskTypeId = null;
+
     for (const issueType of issueTypesData.values || []) {
       if (issueType.subtask === true) {
         subtaskTypeId = issueType.id;
@@ -196,10 +201,12 @@ export async function POST(request: NextRequest) {
 
     if (!createResponse.ok) {
       const errorData = await createResponse.json();
+
       console.error(
         `❌ Failed to create subtask: ${createResponse.status}`,
         errorData
       );
+
       return NextResponse.json(
         { error: "Failed to create subtask", details: errorData },
         { status: createResponse.status }
@@ -207,6 +214,7 @@ export async function POST(request: NextRequest) {
     }
 
     const createdSubtask = await createResponse.json();
+
     console.log(`✅ Successfully created subtask: ${createdSubtask.key}`);
 
     return NextResponse.json({
@@ -219,6 +227,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("❌ Create subtask error:", error);
+
     return NextResponse.json(
       {
         error: "Internal server error",

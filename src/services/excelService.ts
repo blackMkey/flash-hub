@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import { JiraEpic } from "./jiraFetchers";
+import type { JiraEpic } from "./jiraFetchers";
 
 export interface ExcelExportOptions {
   filename?: string;
@@ -62,26 +62,26 @@ export class ExcelService {
 
     // Create the main epic sheet
     const epicSheet = workbook.addWorksheet(sheetName);
+
     await this.createEpicSheet(epicSheet, epic);
 
     // Create subtasks sheet if requested
     if (includeSubtasks && epic.subtasks.length > 0) {
       const subtasksSheet = workbook.addWorksheet("Subtasks");
+
       await this.createSubtasksSheet(subtasksSheet, epic.subtasks);
     }
 
     // Generate buffer
     const buffer = await workbook.xlsx.writeBuffer();
+
     return new Uint8Array(buffer as ArrayBuffer);
   }
 
   /**
    * Create and format the epic details sheet
    */
-  private static async createEpicSheet(
-    worksheet: ExcelJS.Worksheet,
-    epic: JiraEpic
-  ) {
+  private static createEpicSheet(worksheet: ExcelJS.Worksheet, epic: JiraEpic) {
     // Set column widths
     worksheet.columns = [
       { header: "Field", key: "field", width: 20 },
@@ -91,6 +91,7 @@ export class ExcelService {
     // Add title
     worksheet.mergeCells("A1:B1");
     const titleCell = worksheet.getCell("A1");
+
     titleCell.value = `Epic: ${epic.key}`;
     titleCell.font = { bold: true, size: 16, color: { argb: "FFFFFF" } };
     titleCell.fill = {
@@ -137,6 +138,7 @@ export class ExcelService {
     for (let row = 1; row <= epicData.length + 2; row++) {
       for (let col = 1; col <= 2; col++) {
         const cell = worksheet.getCell(row, col);
+
         cell.border = {
           top: { style: "thin" },
           left: { style: "thin" },
@@ -150,7 +152,7 @@ export class ExcelService {
   /**
    * Create and format the subtasks sheet
    */
-  private static async createSubtasksSheet(
+  private static createSubtasksSheet(
     worksheet: ExcelJS.Worksheet,
     subtasks: SubtaskData[]
   ) {
@@ -166,6 +168,7 @@ export class ExcelService {
 
     // Style the header row
     const headerRow = worksheet.getRow(1);
+
     headerRow.font = { bold: true, color: { argb: "FFFFFF" } };
     headerRow.fill = {
       type: "pattern",
@@ -177,6 +180,7 @@ export class ExcelService {
     // Add subtask data
     subtasks.forEach((subtask, index) => {
       const row = worksheet.getRow(index + 2);
+
       row.values = {
         key: subtask.key,
         summary: subtask.summary,
@@ -224,6 +228,7 @@ export class ExcelService {
     });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.download = filename;
     link.click();
@@ -250,6 +255,7 @@ export class ExcelService {
       // Split by space and take the first element to get the username part
       // e.g., "john at fpt dot com" -> ["john", "at", "fpt", "dot", "com"] -> "john"
       const parts = emailAddress.split(" ");
+
       return parts[0] || "";
     };
 
@@ -280,6 +286,7 @@ export class ExcelService {
 
     // Style header
     const headerRow = worksheet.getRow(1);
+
     headerRow.font = { bold: true, color: { argb: "FFFFFF" } };
     headerRow.fill = {
       type: "pattern",
@@ -373,6 +380,7 @@ export class ExcelService {
 
     // Create Components sheet SECOND
     const componentsSheet = workbook.addWorksheet("Components");
+
     componentsSheet.columns = [
       { header: "Component ID", key: "id", width: 15 },
       { header: "Component Name", key: "name", width: 30 },
@@ -380,6 +388,7 @@ export class ExcelService {
 
     // Style components header
     const componentsHeaderRow = componentsSheet.getRow(1);
+
     componentsHeaderRow.font = { bold: true, color: { argb: "FFFFFF" } };
     componentsHeaderRow.fill = {
       type: "pattern",
@@ -404,6 +413,7 @@ export class ExcelService {
 
     // Create Products sheet THIRD
     const productsSheet = workbook.addWorksheet("Products");
+
     productsSheet.columns = [
       { header: "Product ID", key: "id", width: 15 },
       { header: "Product Name", key: "name", width: 30 },
@@ -411,6 +421,7 @@ export class ExcelService {
 
     // Style products header
     const productsHeaderRow = productsSheet.getRow(1);
+
     productsHeaderRow.font = { bold: true, color: { argb: "FFFFFF" } };
     productsHeaderRow.fill = {
       type: "pattern",
@@ -435,6 +446,7 @@ export class ExcelService {
 
     // Create Types of Work sheet FOURTH
     const typesOfWorkSheet = workbook.addWorksheet("Types of Work");
+
     typesOfWorkSheet.columns = [
       { header: "Type ID", key: "id", width: 15 },
       { header: "Type Name", key: "name", width: 30 },
@@ -442,6 +454,7 @@ export class ExcelService {
 
     // Style types of work header
     const typesOfWorkHeaderRow = typesOfWorkSheet.getRow(1);
+
     typesOfWorkHeaderRow.font = { bold: true, color: { argb: "FFFFFF" } };
     typesOfWorkHeaderRow.fill = {
       type: "pattern",
@@ -467,6 +480,7 @@ export class ExcelService {
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
+
     return new Uint8Array(buffer as ArrayBuffer);
   }
 
@@ -479,10 +493,12 @@ export class ExcelService {
     try {
       // Read the uploaded file
       const arrayBuffer = await file.arrayBuffer();
+
       await workbook.xlsx.load(arrayBuffer);
 
       // Get the first worksheet
       const worksheet = workbook.getWorksheet(1);
+
       if (!worksheet) {
         throw new Error("No worksheet found in the uploaded file");
       }
@@ -505,6 +521,7 @@ export class ExcelService {
         // Stop processing when we reach the Instructions section
         if (summary === "Instructions:") {
           shouldContinueProcessing = false;
+
           return;
         }
 
@@ -538,6 +555,7 @@ export class ExcelService {
             field: "Summary",
             message: "Summary is required",
           });
+
           return;
         }
 
@@ -619,9 +637,11 @@ export class ExcelService {
     columnNumber: number
   ): string | null {
     const cell = row.getCell(columnNumber);
+
     if (!cell || cell.value === null || cell.value === undefined) {
       return null;
     }
+
     return String(cell.value).trim();
   }
 
@@ -630,9 +650,11 @@ export class ExcelService {
    */
   private static isValidDateTime(dateString: string): boolean {
     const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+
     if (!regex.test(dateString)) return false;
 
     const date = new Date(dateString);
+
     return !isNaN(date.getTime());
   }
 
@@ -641,9 +663,11 @@ export class ExcelService {
    */
   private static isValidDate(dateString: string): boolean {
     const regex = /^\d{4}-\d{2}-\d{2}$/;
+
     if (!regex.test(dateString)) return false;
 
     const date = new Date(dateString);
+
     return !isNaN(date.getTime());
   }
 
@@ -652,6 +676,7 @@ export class ExcelService {
    */
   private static isValidTimeEstimate(estimate: string): boolean {
     const regex = /^(\d+[wdhm]\s?)+$/;
+
     return regex.test(estimate.replace(/\s/g, ""));
   }
 }

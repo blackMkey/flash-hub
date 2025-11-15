@@ -1,5 +1,5 @@
 // Token session API - handles server-side token storage with HttpOnly cookies
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { sessionStore } from "../libs/sessionStore";
 
 const COOKIE_NAME = "jira_session";
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE endpoint to logout/clear session
-export async function DELETE(request: NextRequest) {
+export function DELETE(request: NextRequest) {
   try {
     const sessionId = request.cookies.get(COOKIE_NAME)?.value;
 
@@ -79,6 +79,7 @@ export async function DELETE(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("❌ Session deletion failed:", error);
+
     return NextResponse.json(
       { error: "Failed to clear session" },
       { status: 500 }

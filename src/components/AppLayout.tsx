@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Box, Container } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores";

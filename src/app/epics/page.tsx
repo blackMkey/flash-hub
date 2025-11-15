@@ -1,20 +1,20 @@
 "use client";
 
 import {
-  Box,
-  Heading,
-  Text,
-  Button,
-  Input,
-  Stack,
-  Flex,
   Badge,
+  Box,
+  Button,
+  Flex,
   Grid,
-  Spinner,
-  Table,
+  Heading,
+  Input,
   Menu,
+  Spinner,
+  Stack,
+  Table,
+  Text,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore, useDataStore } from "@/stores";
 import { useEpic } from "@/services/jiraQueries";
 import { useExcelExport } from "@/services/useExcelExport";
@@ -85,6 +85,7 @@ export default function EpicsPage() {
         epicQueryError instanceof Error
           ? epicQueryError.message
           : "Failed to fetch epic";
+
       setEpicError(errorMessage);
     }
   }, [

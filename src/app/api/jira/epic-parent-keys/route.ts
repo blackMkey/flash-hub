@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
@@ -18,11 +18,13 @@ export async function POST(request: NextRequest) {
 
     // Get token from session cookie
     const auth = requireAuth(request);
+
     if ("error" in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const myHeaders = new Headers();
+
     myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
@@ -44,6 +46,7 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
+
           console.error(
             `❌ Failed to fetch epic ${epicKey}: ${response.status} - ${errorText}`
           );
@@ -65,6 +68,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
+
         console.error(`❌ Error fetching epic ${epicKey}:`, error);
         errors.push({
           epicKey,
@@ -91,6 +95,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("❌ Failed to fetch epic parent keys", error);
+
     return NextResponse.json(
       {
         error: "Internal server error",

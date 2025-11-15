@@ -137,6 +137,7 @@ export const fetchEpicByKey = async (epicKey: string): Promise<JiraEpic> => {
 
   if (!response.ok) {
     const errorData = await response.json();
+
     throw new Error(
       errorData.error || `Failed to fetch epic: ${response.status}`
     );
@@ -214,6 +215,7 @@ export const fetchComponents = async (
   }
 
   const data = await response.json();
+
   return data.components || [];
 };
 
@@ -246,10 +248,6 @@ export const fetchTypeOfWork = async (
 
   return [];
 };
-
-// Note: testConnection and isAuthenticated removed
-// Authentication is now handled directly in authStore with single API call
-
 // Create subtask
 export const createSubtask = async (payload: CreateSubtaskPayload) => {
   const response = await fetch("/api/jira/create-subtask", {
@@ -263,6 +261,7 @@ export const createSubtask = async (payload: CreateSubtaskPayload) => {
 
   if (!response.ok) {
     const errorData = await response.json();
+
     throw new Error(errorData.error || "Failed to create subtask");
   }
 
@@ -305,10 +304,12 @@ export const fetchDefectPatterns = async (
 
   if (!response.ok) {
     const errorData = await response.json();
+
     throw new Error(errorData.error || "Failed to fetch defect patterns");
   }
 
   const result: ProductOptionsResponse = await response.json();
+
   return result.data?.productOptions || [];
 };
 
@@ -367,10 +368,12 @@ export const createSubtasksBulk = async (
 
   if (response.status >= 500) {
     const errorData = await response.json();
+
     throw new Error(errorData.error || "Failed to create subtasks in bulk");
   }
 
   const result = await response.json();
+
   return result.result;
 };
 
@@ -464,6 +467,7 @@ export const fetchEpicParentKey = async (epicKey: string): Promise<string> => {
 
   if (!response.ok) {
     const errorData = await response.json();
+
     throw new Error(
       errorData.error || `Failed to fetch epic parent key: ${response.status}`
     );
@@ -503,6 +507,7 @@ export const fetchEpicParentKeys = async (
 
   if (!response.ok) {
     const errorData = await response.json();
+
     throw new Error(
       errorData.error || `Failed to fetch epic parent keys: ${response.status}`
     );
@@ -515,6 +520,7 @@ export const fetchEpicParentKeys = async (
     const failedEpics = result.errors.map(
       (err: { epicKey: string; error: string }) => err.epicKey
     );
+
     throw new Error(
       `Failed to fetch parent keys for epics: ${failedEpics.join(", ")}`
     );

@@ -1,22 +1,22 @@
 'use client'
 
 import {
+  Badge,
   Box,
-  Text,
   Button,
-  Stack,
   Flex,
   Spinner,
-  Badge,
+  Stack,
   Table,
+  Text,
 } from '@chakra-ui/react'
-import { useEffect, Suspense, useState, useRef } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useAuthStore, useDataStore } from '@/stores'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEpic } from '@/services/jiraQueries'
 import { useExcelExport } from '@/services/useExcelExport'
-import { ParseResult } from '@/services/excelService'
-import { BulkCreateResult } from '@/services/jiraFetchers'
+import type { ParseResult } from '@/services/excelService'
+import type { BulkCreateResult } from '@/services/jiraFetchers'
 
 // State configuration objects
 const STATE_COLORS = {
@@ -70,6 +70,7 @@ function AddSubTaskByTemplateContent() {
     } else if (epicQueryError) {
       setCurrentEpic(null)
       const errorMessage = epicQueryError instanceof Error ? epicQueryError.message : 'Failed to fetch epic'
+
       setEpicError(errorMessage)
     }
   }, [fetchedEpic, epicQueryError, setCurrentEpic, setEpicError])
@@ -79,12 +80,14 @@ function AddSubTaskByTemplateContent() {
     // For multi epic mode, parent key is not required
     if (!isMultiEpicMode && !parentKey) {
       router.push('/epics')
+
       return
     }
 
     // If not connected, redirect to epics page
     if (!isConnected) {
       router.push('/epics')
+
       return
     }
   }, [parentKey, isConnected, router, isMultiEpicMode])
@@ -98,6 +101,7 @@ function AddSubTaskByTemplateContent() {
       
       // Parse the file automatically when selected
       const result = await parseSubtaskTemplate(file)
+
       if (result) {
         setParseResult(result)
       }
@@ -108,6 +112,7 @@ function AddSubTaskByTemplateContent() {
 
   const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
+
     if (files && files.length > 0) {
       await handleFileSelect(files[0])
     }

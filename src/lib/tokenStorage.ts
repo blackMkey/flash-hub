@@ -18,14 +18,18 @@ export const TokenStorage = {
 
       if (!response.ok) {
         const error = await response.json();
+
         console.error("Failed to save token:", error);
+
         return false;
       }
 
       console.log("✅ Token stored securely");
+
       return true;
     } catch (error) {
       console.error("Error saving token:", error);
+
       return false;
     }
   },

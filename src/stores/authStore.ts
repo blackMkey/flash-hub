@@ -1,6 +1,6 @@
 // Auth Store - manages authentication state, token, and user info
 import { create } from "zustand";
-import { persist, devtools } from "zustand/middleware";
+import { devtools, persist } from "zustand/middleware";
 import { TokenStorage } from "@/lib/tokenStorage";
 import type { User } from "@/services/jiraFetchers";
 
@@ -59,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
             }
 
             const user = await response.json();
+
             // Add email based on username
             if (user.name) {
               user.emailAddress = user.name.toLowerCase() + "@fpt.com";
@@ -79,6 +80,7 @@ export const useAuthStore = create<AuthState>()(
           } catch (error) {
             const errorMessage =
               error instanceof Error ? error.message : "Failed to save token";
+
             set(
               {
                 error: errorMessage,
@@ -89,6 +91,7 @@ export const useAuthStore = create<AuthState>()(
               false,
               "auth/saveToken/error"
             );
+
             return false;
           }
         },
@@ -135,6 +138,7 @@ export const useAuthStore = create<AuthState>()(
 
             if (response.ok) {
               const user = await response.json();
+
               // Add email based on username
               if (user.name) {
                 user.emailAddress = user.name.toLowerCase() + "@fpt.com";

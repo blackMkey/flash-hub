@@ -34,9 +34,11 @@ export function formatJiraDateTime(date: Date): string {
  */
 export function parseAndFormatJiraDate(dateInput: string): string {
   const date = new Date(dateInput)
+
   if (isNaN(date.getTime())) {
     throw new Error('Invalid date format')
   }
+
   return formatJiraDate(date)
 }
 
@@ -46,9 +48,11 @@ export function parseAndFormatJiraDate(dateInput: string): string {
  */
 export function parseAndFormatJiraDateTime(dateInput: string): string {
   const date = new Date(dateInput)
+
   if (isNaN(date.getTime())) {
     throw new Error('Invalid date format')
   }
+
   return formatJiraDateTime(date)
 }
 
@@ -71,7 +75,9 @@ export function getCurrentJiraDateTime(): string {
  */
 export function addDaysToJiraDate(dateStr: string, days: number): string {
   const date = new Date(dateStr)
+
   date.setDate(date.getDate() + days)
+
   return formatJiraDate(date)
 }
 
@@ -81,5 +87,6 @@ export function addDaysToJiraDate(dateStr: string, days: number): string {
 export function validateTimeTrackingFormat(timeStr: string): boolean {
   // Allow formats like: 3w, 4d, 12h, 3w 4d, 3w 4d 12h, etc.
   const timeRegex = /^(\d+[wdhm]\s*)+$/
+
   return timeRegex.test(timeStr.trim())
 }

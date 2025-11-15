@@ -29,6 +29,7 @@ class SessionStore {
   // Create new session
   createSession(token: string): string {
     const sessionId = this.generateSessionId();
+
     this.sessions.set(sessionId, {
       token,
       createdAt: Date.now(),
@@ -37,6 +38,7 @@ class SessionStore {
     console.log(
       `✅ Session created: ${sessionId} (Total sessions: ${this.sessions.size})`
     );
+
     return sessionId;
   }
 
@@ -46,28 +48,34 @@ class SessionStore {
 
     if (!session) {
       console.log(`❌ Session not found: ${sessionId}`);
+
       return null;
     }
 
     // Check if expired
     const now = Date.now();
+
     if (now - session.lastAccessed > this.SESSION_TIMEOUT) {
       console.log(`⏰ Session expired: ${sessionId}`);
       this.sessions.delete(sessionId);
+
       return null;
     }
 
     // Update last accessed time
     session.lastAccessed = now;
+
     return session.token;
   }
 
   // Delete session
   deleteSession(sessionId: string): boolean {
     const deleted = this.sessions.delete(sessionId);
+
     if (deleted) {
       console.log(`🗑️  Session deleted: ${sessionId}`);
     }
+
     return deleted;
   }
 
