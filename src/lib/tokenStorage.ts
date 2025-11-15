@@ -1,65 +1,47 @@
-// Token management utility for localStorage operations
-const STORAGE_KEY = 'jira_flash_token'
-const TIMESTAMP_KEY = 'jira_flash_timestamp'
-const SESSION_TIMEOUT = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+// Token management utility - server-side sessions with HttpOnly cookies
+// Token stored securely on server, never exposed to client
 
 export const TokenStorage = {
-  // Save encoded token with timestamp
-  saveEncodedToken(encodedToken: string): void {
-    if (typeof window === 'undefined') return
-    
-    const timestamp = Date.now()
-    
-    localStorage.setItem(STORAGE_KEY, encodedToken)
-    localStorage.setItem(TIMESTAMP_KEY, timestamp.toString())
+  // Store token securely on server (creates session cookie)
+  async saveToken(token: string): Promise<boolean> {
+    if (typeof window === "undefined") return false;
+
+    try {
+      const response = await fetch("/api/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Failed to save token:", error);
+        return false;
+      }
+
+      console.log("✅ Token stored securely");
+      return true;
+    } catch (error) {
+      console.error("Error saving token:", error);
+      return false;
+    }
   },
 
-  // Get encoded token if valid and not expired
-  getEncodedToken(): string | null {
-    if (typeof window === 'undefined') return null
-    
-    const encodedToken = localStorage.getItem(STORAGE_KEY)
-    const timestampStr = localStorage.getItem(TIMESTAMP_KEY)
-    
-    if (!encodedToken || !timestampStr) return null
-    
-    // Check if token is expired
-    const timestamp = parseInt(timestampStr)
-    const now = Date.now()
-    
-    if (now - timestamp > SESSION_TIMEOUT) {
-      this.clearToken()
-      return null
+  // Clear server session (logout)
+  async clearToken(): Promise<void> {
+    if (typeof window === "undefined") return;
+
+    try {
+      await fetch("/api/token", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      console.log("🚪 Logged out");
+    } catch (error) {
+      console.error("Error clearing token:", error);
     }
-    
-    return encodedToken
   },
-  
-  // Clear token and timestamp
-  clearToken(): void {
-    if (typeof window === 'undefined') return
-    
-    localStorage.removeItem(STORAGE_KEY)
-    localStorage.removeItem(TIMESTAMP_KEY)
-  },
-  
-  // Check if token exists and is valid
-  hasValidToken(): boolean {
-    return this.getEncodedToken() !== null
-  },
-  
-  // Get time until token expires (in hours)
-  getTimeUntilExpiry(): number {
-    if (typeof window === 'undefined') return 0
-    
-    const timestampStr = localStorage.getItem(TIMESTAMP_KEY)
-    if (!timestampStr) return 0
-    
-    const timestamp = parseInt(timestampStr)
-    const now = Date.now()
-    const elapsed = now - timestamp
-    const remaining = SESSION_TIMEOUT - elapsed
-    
-    return Math.max(0, Math.floor(remaining / (60 * 60 * 1000)))
-  }
-}
+};

@@ -26,7 +26,6 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
   const {
     isConnected,
     isLoading: authLoading,
-    isLoadingExistingToken,
     error: authError,
     user,
     saveToken,
@@ -72,9 +71,9 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
             colorPalette="whiteAlpha"
             variant={isConnected ? "solid" : "outline"}
             onClick={handleToggleTokenInput}
-            disabled={isLoadingExistingToken}
+            disabled={authLoading}
           >
-            {isLoadingExistingToken ? (
+            {authLoading ? (
               <Flex align="center" gap={2}>
                 <Spinner size="sm" />
                 Checking...
@@ -147,7 +146,7 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
       )}
 
       {/* Loading Existing Token Display */}
-      {isLoadingExistingToken && (
+      {authLoading && (
         <Box
           p={4}
           bg="blue.50"
@@ -158,9 +157,7 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
         >
           <Flex align="center" gap={3}>
             <Spinner size="sm" colorPalette="blue" />
-            <Text color="blue.800">
-              🔍 Checking for existing session...
-            </Text>
+            <Text color="blue.800">🔍 Checking for existing session...</Text>
           </Flex>
         </Box>
       )}

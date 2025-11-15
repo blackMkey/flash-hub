@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decodeToken } from "../../libs/tokenManager";
+import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -8,7 +8,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { epicKeys } = body;
-    const token = request.headers.get("authorization")?.replace("Bearer ", "");
 
     if (!epicKeys || !Array.isArray(epicKeys) || epicKeys.length === 0) {
       return NextResponse.json(
@@ -17,14 +16,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+    // Get token from session cookie
+    const auth = requireAuth(request);
+    if ("error" in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const decodedToken = decodeToken(token);
-
     const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Bearer " + decodedToken);
+    myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
     const parentKeyMap: Record<string, string> = {};
@@ -50,29 +49,35 @@ export async function POST(request: NextRequest) {
           );
           errors.push({
             epicKey,
-            error: `HTTP ${response.status}: ${errorText || 'Unknown error'}`
+            error: `HTTP ${response.status}: ${errorText || "Unknown error"}`,
           });
           continue;
         }
 
         const epic = await response.json();
-        
+
         // For epic subtasks, the parent key is the epic key itself
         parentKeyMap[epicKey] = epic.key;
-        
-        console.log(`✅ Successfully fetched parent key for ${epicKey}: ${epic.key}`);
 
+        console.log(
+          `✅ Successfully fetched parent key for ${epicKey}: ${epic.key}`
+        );
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         console.error(`❌ Error fetching epic ${epicKey}:`, error);
         errors.push({
           epicKey,
-          error: errorMessage
+          error: errorMessage,
         });
       }
     }
 
-    console.log(`📊 Parent key mapping results: ${Object.keys(parentKeyMap).length} successful, ${errors.length} failed`);
+    console.log(
+      `📊 Parent key mapping results: ${
+        Object.keys(parentKeyMap).length
+      } successful, ${errors.length} failed`
+    );
 
     return NextResponse.json({
       success: true,
@@ -81,10 +86,9 @@ export async function POST(request: NextRequest) {
       summary: {
         total: epicKeys.length,
         successful: Object.keys(parentKeyMap).length,
-        failed: errors.length
-      }
+        failed: errors.length,
+      },
     });
-
   } catch (error) {
     console.error("❌ Failed to fetch epic parent keys", error);
     return NextResponse.json(

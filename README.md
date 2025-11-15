@@ -1,4 +1,4 @@
-# Jira Flash - Next.js + Chakra UI
+# Flash hub - Next.js + Chakra UI
 
 This is a [Next.js](https://nextjs.org) project with [Chakra UI](https://v2.chakra-ui.com/) integration, bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
@@ -31,7 +31,7 @@ You can start editing the page by modifying `src/app/page.tsx`. The page auto-up
 ## Project Structure
 
 ```
-jira-flash/
+flash-hub/
 ├── src/
 │   └── app/
 │       ├── layout.tsx      # Root layout with ChakraProvider
@@ -45,6 +45,7 @@ jira-flash/
 ## Chakra UI Setup
 
 This project includes:
+
 - ChakraProvider configured in `src/app/providers.tsx`
 - Sample components demonstrating Chakra UI usage
 - Modern design system with consistent theming

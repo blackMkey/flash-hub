@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   Box,
@@ -11,184 +11,213 @@ import {
   Textarea,
   Badge,
   Select,
-} from '@chakra-ui/react'
-import { useState, useEffect, Suspense } from 'react'
-import { useAuthStore, useDataStore } from '@/stores'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { validateTimeTrackingFormat } from '@/utils/jiraDateUtils'
-import { 
-  useComponents, 
-  useTypeOfWork, 
+} from "@chakra-ui/react";
+import { useState, useEffect, Suspense } from "react";
+import { useAuthStore, useDataStore } from "@/stores";
+import { useRouter, useSearchParams } from "next/navigation";
+import { validateTimeTrackingFormat } from "@/utils/jiraDateUtils";
+import {
+  useComponents,
+  useTypeOfWork,
   useCreateSubtask,
   useEpic,
-  useDefectPatterns
-} from '@/services/jiraQueries'
-import { createListCollection } from '@chakra-ui/react'
+  useDefectPatterns,
+} from "@/services/jiraQueries";
+import { createListCollection } from "@chakra-ui/react";
 
 function AddSubTaskContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const parentKey = searchParams.get('parentKey')
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const parentKey = searchParams.get("parentKey");
 
   // Form state
-  const [summary, setSummary] = useState('')
-  const [description, setDescription] = useState('')
-  const [assignee, setAssignee] = useState('')
-  const [reporter, setReporter] = useState('')
-  
+  const [summary, setSummary] = useState("");
+  const [description, setDescription] = useState("");
+  const [assignee, setAssignee] = useState("");
+  const [reporter, setReporter] = useState("");
+
   // New required fields
-  const [componentId, setComponentId] = useState('')
-  const [productId, setProductId] = useState('')
-  const [typeOfWork, setTypeOfWork] = useState('')
-  const [plannedStart, setPlannedStart] = useState('')
-  const [dueDate, setDueDate] = useState('')
-  const [originalEstimate, setOriginalEstimate] = useState('')
-  const [remainingEstimate, setRemainingEstimate] = useState('')
-  
+  const [componentId, setComponentId] = useState("");
+  const [productId, setProductId] = useState("");
+  const [typeOfWork, setTypeOfWork] = useState("");
+  const [plannedStart, setPlannedStart] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [originalEstimate, setOriginalEstimate] = useState("");
+  const [remainingEstimate, setRemainingEstimate] = useState("");
+
   // Metadata state
-  const [isCreating, setIsCreating] = useState(false)
-  const [createError, setCreateError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   // Auth store
-  const { isConnected, user } = useAuthStore()
+  const { isConnected, user } = useAuthStore();
 
   // Data store
-  const { currentEpic, setCurrentEpic, setEpicError } = useDataStore()
+  const { currentEpic, setCurrentEpic, setEpicError } = useDataStore();
 
   // React Query hooks for metadata and epic fetching
-  const { 
-    data: fetchedEpic,
-    isLoading: isLoadingEpic,
-    error: epicQueryError
-  } = useEpic(parentKey || null)
+  const { data: fetchedEpic, error: epicQueryError } = useEpic(
+    parentKey || null
+  );
 
-  const { 
-    data: components = [], 
-    isLoading: isLoadingComponents 
-  } = useComponents(currentEpic?.project?.id || null)
+  const { data: components = [], isLoading: isLoadingComponents } =
+    useComponents(currentEpic?.project?.id || null);
 
-  const { 
-    data: typeOfWorkOptions = [], 
-    isLoading: isLoadingTypeOfWork 
-  } = useTypeOfWork(currentEpic?.project?.id || null, currentEpic?.key || null)
+  const { data: typeOfWorkOptions = [], isLoading: isLoadingTypeOfWork } =
+    useTypeOfWork(currentEpic?.project?.id || null, currentEpic?.key || null);
 
   // React Query hook for defect patterns (product options)
-  const { 
-    data: productOptions = [], 
-    isLoading: isLoadingProductOptions 
-  } = useDefectPatterns(currentEpic?.id || null, currentEpic?.project?.id || null)
+  const { data: productOptions = [], isLoading: isLoadingProductOptions } =
+    useDefectPatterns(
+      currentEpic?.id || null,
+      currentEpic?.project?.id || null
+    );
 
   // Combined loading state
-  const isLoadingMetadata = isLoadingComponents || isLoadingTypeOfWork || isLoadingProductOptions
+  const isLoadingMetadata =
+    isLoadingComponents || isLoadingTypeOfWork || isLoadingProductOptions;
 
   // Create subtask mutation
-  const createSubtaskMutation = useCreateSubtask()
+  const createSubtaskMutation = useCreateSubtask();
 
   // Utility function to extract username from email address
   const extractUsernameFromEmail = (emailAddress: string): string => {
-    if (!emailAddress) return ''
+    if (!emailAddress) return "";
     // Split by space and take the first element to get the username part
     // e.g., "john at fpt dot com" -> ["john", "at", "fpt", "dot", "com"] -> "john"
-    const parts = emailAddress.split(' ')
-    return parts[0] || ''
-  }
+    const parts = emailAddress.split(" ");
+    return parts[0] || "";
+  };
 
   // Create collections for select components
   const componentCollection = createListCollection({
-    items: components.map(component => ({ value: component.id, label: component.name }))
-  })
+    items: components.map((component) => ({
+      value: component.id,
+      label: component.name,
+    })),
+  });
 
   const typeOfWorkCollection = createListCollection({
-    items: typeOfWorkOptions.map(option => ({ value: option.value, label: option.label }))
-  })
+    items: typeOfWorkOptions.map((option) => ({
+      value: option.value,
+      label: option.label,
+    })),
+  });
 
   // Create product options collection for select component
   const productCollection = createListCollection({
-    items: productOptions.map(option => ({ value: option.value, label: option.label }))
-  })
+    items: productOptions.map((option) => ({
+      value: option.value,
+      label: option.label,
+    })),
+  });
 
   // Set default values when component mounts
   useEffect(() => {
     // Set to HTML input compatible formats
-    const now = new Date()
-    
+    const now = new Date();
+
     // For datetime-local input: "2025-10-28T14:30"
-    const plannedStartISO = new Date(now.getTime() + 60000).toISOString().slice(0, 16) // Add 1 minute
-    setPlannedStart(plannedStartISO)
-    
-    // For date input: "2025-10-28" 
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const dueDateISO = tomorrow.toISOString().slice(0, 10)
-    setDueDate(dueDateISO)
-    
-    setOriginalEstimate('8h')
-    setRemainingEstimate('8h')
-  }, [])
+    const plannedStartISO = new Date(now.getTime() + 60000)
+      .toISOString()
+      .slice(0, 16); // Add 1 minute
+    setPlannedStart(plannedStartISO);
+
+    // For date input: "2025-10-28"
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dueDateISO = tomorrow.toISOString().slice(0, 10);
+    setDueDate(dueDateISO);
+
+    setOriginalEstimate("8h");
+    setRemainingEstimate("8h");
+  }, []);
 
   useEffect(() => {
     // Sync fetched epic with dataStore
     if (fetchedEpic) {
-      setCurrentEpic(fetchedEpic)
-      setEpicError(null)
+      setCurrentEpic(fetchedEpic);
+      setEpicError(null);
     } else if (epicQueryError) {
-      setCurrentEpic(null)
-      const errorMessage = epicQueryError instanceof Error ? epicQueryError.message : 'Failed to fetch epic'
-      setEpicError(errorMessage)
+      setCurrentEpic(null);
+      const errorMessage =
+        epicQueryError instanceof Error
+          ? epicQueryError.message
+          : "Failed to fetch epic";
+      setEpicError(errorMessage);
     }
-  }, [fetchedEpic, epicQueryError, setCurrentEpic, setEpicError])
+  }, [fetchedEpic, epicQueryError, setCurrentEpic, setEpicError]);
 
   useEffect(() => {
     // Set default assignee and reporter from currentEpic when it changes
     if (currentEpic) {
       // Set assignee from epic's assignee if available
       if (currentEpic.assignee?.emailAddress) {
-        const assigneeUsername = extractUsernameFromEmail(currentEpic.assignee.emailAddress)
-        setAssignee(assigneeUsername)
+        const assigneeUsername = extractUsernameFromEmail(
+          currentEpic.assignee.emailAddress
+        );
+        setAssignee(assigneeUsername);
       }
-      
+
       // Set reporter from epic's reporter if available
       if (currentEpic.reporter?.emailAddress) {
-        const reporterUsername = extractUsernameFromEmail(currentEpic.reporter.emailAddress)
-        setReporter(reporterUsername)
+        const reporterUsername = extractUsernameFromEmail(
+          currentEpic.reporter.emailAddress
+        );
+        setReporter(reporterUsername);
       }
     }
-  }, [currentEpic])
+  }, [currentEpic]);
 
   useEffect(() => {
     // If no parent key provided, redirect back to epics
     if (!parentKey) {
-      router.push('/epics')
-      return
+      router.push("/epics");
+      return;
     }
 
     // If not connected, redirect to epics page
     if (!isConnected) {
-      router.push('/epics')
-      return
+      router.push("/epics");
+      return;
     }
-  }, [parentKey, isConnected, router])
+  }, [parentKey, isConnected, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!summary.trim() || !parentKey || !isConnected || !currentEpic || 
-        !componentId || !productId || !typeOfWork || !plannedStart || 
-        !dueDate || !originalEstimate || !remainingEstimate) {
-      setCreateError('Please fill in all required fields')
-      return
+    e.preventDefault();
+
+    if (
+      !summary.trim() ||
+      !parentKey ||
+      !isConnected ||
+      !currentEpic ||
+      !componentId ||
+      !productId ||
+      !typeOfWork ||
+      !plannedStart ||
+      !dueDate ||
+      !originalEstimate ||
+      !remainingEstimate
+    ) {
+      setCreateError("Please fill in all required fields");
+      return;
     }
 
     // Validate time tracking format
-    if (!validateTimeTrackingFormat(originalEstimate) || !validateTimeTrackingFormat(remainingEstimate)) {
-      setCreateError('Time estimates must be in format like "8h", "2d", "1w 3d", etc.')
-      return
+    if (
+      !validateTimeTrackingFormat(originalEstimate) ||
+      !validateTimeTrackingFormat(remainingEstimate)
+    ) {
+      setCreateError(
+        'Time estimates must be in format like "8h", "2d", "1w 3d", etc.'
+      );
+      return;
     }
 
     try {
-      setIsCreating(true)
-      setCreateError(null)
+      setIsCreating(true);
+      setCreateError(null);
 
       // Send dates directly as they come from HTML inputs (ISO compatible)
       await createSubtaskMutation.mutateAsync({
@@ -204,47 +233,47 @@ function AddSubTaskContent() {
         plannedStart: plannedStart, // HTML datetime-local format: "2025-10-28T14:30"
         dueDate: dueDate, // HTML date format: "2025-10-28"
         originalEstimate: originalEstimate.trim(),
-        remainingEstimate: remainingEstimate.trim()
-      })
-      
-      setSuccess(true)
-      
+        remainingEstimate: remainingEstimate.trim(),
+      });
+
+      setSuccess(true);
+
       // Reset form
-      setSummary('')
-      setDescription('')
-      setAssignee('')
-      setReporter('')
-      setComponentId('')
-      setProductId('')
-      setTypeOfWork('')
-      setPlannedStart('')
-      setDueDate('')
-      setOriginalEstimate('')
-      setRemainingEstimate('')
+      setSummary("");
+      setDescription("");
+      setAssignee("");
+      setReporter("");
+      setComponentId("");
+      setProductId("");
+      setTypeOfWork("");
+      setPlannedStart("");
+      setDueDate("");
+      setOriginalEstimate("");
+      setRemainingEstimate("");
 
       // Show success message and redirect after a delay
       setTimeout(() => {
-        router.push('/epics')
-      }, 2000)
-
+        router.push("/epics");
+      }, 2000);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create subtask'
-      setCreateError(errorMessage)
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create subtask";
+      setCreateError(errorMessage);
     } finally {
-      setIsCreating(false)
+      setIsCreating(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    router.push('/epics')
-  }
+    router.push("/epics");
+  };
 
   if (!parentKey) {
     return (
       <Box p={6} textAlign="center">
         <Text>No parent epic specified. Redirecting...</Text>
       </Box>
-    )
+    );
   }
 
   if (!isConnected) {
@@ -252,17 +281,27 @@ function AddSubTaskContent() {
       <Box p={6} textAlign="center">
         <Text>Please connect to Jira first. Redirecting...</Text>
       </Box>
-    )
+    );
   }
 
   return (
     <Box p={6} maxW="4xl" mx="auto">
       {/* Parent Epic Info */}
       {currentEpic && (
-        <Box p={4} bg="rgba(255,255,255,0.95)" borderRadius="lg" backdropFilter="blur(10px)" mb={6}>
-          <Text fontSize="sm" color="gray.600" mb={2}>Creating subtask for:</Text>
+        <Box
+          p={4}
+          bg="rgba(255,255,255,0.95)"
+          borderRadius="lg"
+          backdropFilter="blur(10px)"
+          mb={6}
+        >
+          <Text fontSize="sm" color="gray.600" mb={2}>
+            Creating subtask for:
+          </Text>
           <Flex align="center" gap={3}>
-            <Badge colorPalette="blue" size="lg">{currentEpic.key}</Badge>
+            <Badge colorPalette="blue" size="lg">
+              {currentEpic.key}
+            </Badge>
             <Text fontWeight="medium">{currentEpic.summary}</Text>
           </Flex>
         </Box>
@@ -270,7 +309,14 @@ function AddSubTaskContent() {
 
       {/* Success Message */}
       {success && (
-        <Box p={4} bg="green.50" borderRadius="md" border="1px solid" borderColor="green.200" mb={6}>
+        <Box
+          p={4}
+          bg="green.50"
+          borderRadius="md"
+          border="1px solid"
+          borderColor="green.200"
+          mb={6}
+        >
           <Text color="green.800">
             ✅ Subtask created successfully! Redirecting back to epics...
           </Text>
@@ -279,31 +325,48 @@ function AddSubTaskContent() {
 
       {/* Error Message */}
       {createError && (
-        <Box p={4} bg="red.50" borderRadius="md" border="1px solid" borderColor="red.200" mb={6}>
-          <Text color="red.800">
-            ❌ {createError}
-          </Text>
+        <Box
+          p={4}
+          bg="red.50"
+          borderRadius="md"
+          border="1px solid"
+          borderColor="red.200"
+          mb={6}
+        >
+          <Text color="red.800">❌ {createError}</Text>
         </Box>
       )}
 
       {/* Loading Metadata */}
       {isLoadingMetadata && (
-        <Box p={4} bg="blue.50" borderRadius="md" border="1px solid" borderColor="blue.200" mb={6}>
+        <Box
+          p={4}
+          bg="blue.50"
+          borderRadius="md"
+          border="1px solid"
+          borderColor="blue.200"
+          mb={6}
+        >
           <Flex align="center" gap={3}>
             <Spinner size="sm" />
-            <Text color="blue.800">
-              Loading form data...
-            </Text>
+            <Text color="blue.800">Loading form data...</Text>
           </Flex>
         </Box>
       )}
 
       {/* Create Subtask Form */}
-      <Box p={6} bg="rgba(255,255,255,0.95)" borderRadius="lg" backdropFilter="blur(10px)">
+      <Box
+        p={6}
+        bg="rgba(255,255,255,0.95)"
+        borderRadius="lg"
+        backdropFilter="blur(10px)"
+      >
         <form onSubmit={handleSubmit}>
           <Stack gap={6}>
             <Box>
-              <Text fontWeight="medium" mb={2}>Summary *</Text>
+              <Text fontWeight="medium" mb={2}>
+                Summary *
+              </Text>
               <Input
                 placeholder="Enter subtask summary..."
                 value={summary}
@@ -314,7 +377,9 @@ function AddSubTaskContent() {
             </Box>
 
             <Box>
-              <Text fontWeight="medium" mb={2}>Description</Text>
+              <Text fontWeight="medium" mb={2}>
+                Description
+              </Text>
               <Textarea
                 placeholder="Enter subtask description (optional)..."
                 value={description}
@@ -326,11 +391,15 @@ function AddSubTaskContent() {
 
             {/* Component Selection */}
             <Box>
-              <Text fontWeight="medium" mb={2}>Component *</Text>
+              <Text fontWeight="medium" mb={2}>
+                Component *
+              </Text>
               <Select.Root
                 collection={componentCollection}
                 value={[componentId]}
-                onValueChange={(details) => setComponentId(details.value[0] || '')}
+                onValueChange={(details) =>
+                  setComponentId(details.value[0] || "")
+                }
                 disabled={isCreating || success || isLoadingMetadata}
                 required
               >
@@ -356,11 +425,15 @@ function AddSubTaskContent() {
 
             {/* Product Selection */}
             <Box>
-              <Text fontWeight="medium" mb={2}>Product *</Text>
+              <Text fontWeight="medium" mb={2}>
+                Product *
+              </Text>
               <Select.Root
                 collection={productCollection}
                 value={[productId]}
-                onValueChange={(details) => setProductId(details.value[0] || '')}
+                onValueChange={(details) =>
+                  setProductId(details.value[0] || "")
+                }
                 disabled={isCreating || success || isLoadingMetadata}
                 required
               >
@@ -391,11 +464,15 @@ function AddSubTaskContent() {
 
             {/* Type of Work Selection */}
             <Box>
-              <Text fontWeight="medium" mb={2}>Type of Work *</Text>
+              <Text fontWeight="medium" mb={2}>
+                Type of Work *
+              </Text>
               <Select.Root
                 collection={typeOfWorkCollection}
                 value={[typeOfWork]}
-                onValueChange={(details) => setTypeOfWork(details.value[0] || '')}
+                onValueChange={(details) =>
+                  setTypeOfWork(details.value[0] || "")
+                }
                 disabled={isCreating || success || isLoadingMetadata}
                 required
               >
@@ -422,7 +499,9 @@ function AddSubTaskContent() {
             {/* Date Fields */}
             <Flex gap={4}>
               <Box flex={1}>
-                <Text fontWeight="medium" mb={2}>Planned Start *</Text>
+                <Text fontWeight="medium" mb={2}>
+                  Planned Start *
+                </Text>
                 <Input
                   type="datetime-local"
                   value={plannedStart}
@@ -435,7 +514,9 @@ function AddSubTaskContent() {
                 </Text>
               </Box>
               <Box flex={1}>
-                <Text fontWeight="medium" mb={2}>Due Date *</Text>
+                <Text fontWeight="medium" mb={2}>
+                  Due Date *
+                </Text>
                 <Input
                   type="date"
                   value={dueDate}
@@ -452,7 +533,9 @@ function AddSubTaskContent() {
             {/* Time Tracking */}
             <Flex gap={4}>
               <Box flex={1}>
-                <Text fontWeight="medium" mb={2}>Original Estimate *</Text>
+                <Text fontWeight="medium" mb={2}>
+                  Original Estimate *
+                </Text>
                 <Input
                   placeholder="e.g., 8h, 2d, 1w 3d"
                   value={originalEstimate}
@@ -465,7 +548,9 @@ function AddSubTaskContent() {
                 </Text>
               </Box>
               <Box flex={1}>
-                <Text fontWeight="medium" mb={2}>Remaining Estimate *</Text>
+                <Text fontWeight="medium" mb={2}>
+                  Remaining Estimate *
+                </Text>
                 <Input
                   placeholder="e.g., 8h, 2d, 1w 3d"
                   value={remainingEstimate}
@@ -482,9 +567,15 @@ function AddSubTaskContent() {
             <Box>
               <Flex align="center" gap={2} mb={2}>
                 <Text fontWeight="medium">Assignee</Text>
-                {currentEpic?.assignee?.emailAddress && assignee === extractUsernameFromEmail(currentEpic.assignee.emailAddress) && (
-                  <Badge size="sm" colorPalette="blue">From Epic</Badge>
-                )}
+                {currentEpic?.assignee?.emailAddress &&
+                  assignee ===
+                    extractUsernameFromEmail(
+                      currentEpic.assignee.emailAddress
+                    ) && (
+                    <Badge size="sm" colorPalette="blue">
+                      From Epic
+                    </Badge>
+                  )}
               </Flex>
               <Input
                 placeholder="Enter assignee username (optional)..."
@@ -498,7 +589,7 @@ function AddSubTaskContent() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setAssignee(user.name || '')}
+                      onClick={() => setAssignee(user.name || "")}
                       disabled={isCreating || success}
                     >
                       Assign to me
@@ -516,7 +607,11 @@ function AddSubTaskContent() {
                       colorPalette="blue"
                       onClick={() => {
                         if (currentEpic?.assignee?.emailAddress) {
-                          setAssignee(extractUsernameFromEmail(currentEpic.assignee.emailAddress))
+                          setAssignee(
+                            extractUsernameFromEmail(
+                              currentEpic.assignee.emailAddress
+                            )
+                          );
                         }
                       }}
                       disabled={isCreating || success}
@@ -524,7 +619,11 @@ function AddSubTaskContent() {
                       Use Epic Assignee
                     </Button>
                     <Text fontSize="sm" color="blue.600">
-                      ({extractUsernameFromEmail(currentEpic.assignee.emailAddress)})
+                      (
+                      {extractUsernameFromEmail(
+                        currentEpic.assignee.emailAddress
+                      )}
+                      )
                     </Text>
                   </Flex>
                 )}
@@ -534,9 +633,15 @@ function AddSubTaskContent() {
             <Box>
               <Flex align="center" gap={2} mb={2}>
                 <Text fontWeight="medium">Reporter</Text>
-                {currentEpic?.reporter?.emailAddress && reporter === extractUsernameFromEmail(currentEpic.reporter.emailAddress) && (
-                  <Badge size="sm" colorPalette="purple">From Epic</Badge>
-                )}
+                {currentEpic?.reporter?.emailAddress &&
+                  reporter ===
+                    extractUsernameFromEmail(
+                      currentEpic.reporter.emailAddress
+                    ) && (
+                    <Badge size="sm" colorPalette="purple">
+                      From Epic
+                    </Badge>
+                  )}
               </Flex>
               <Input
                 placeholder="Enter reporter username (optional)..."
@@ -550,7 +655,7 @@ function AddSubTaskContent() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setReporter(user.name || '')}
+                      onClick={() => setReporter(user.name || "")}
                       disabled={isCreating || success}
                     >
                       Report by me
@@ -568,7 +673,11 @@ function AddSubTaskContent() {
                       colorPalette="purple"
                       onClick={() => {
                         if (currentEpic?.reporter?.emailAddress) {
-                          setReporter(extractUsernameFromEmail(currentEpic.reporter.emailAddress))
+                          setReporter(
+                            extractUsernameFromEmail(
+                              currentEpic.reporter.emailAddress
+                            )
+                          );
                         }
                       }}
                       disabled={isCreating || success}
@@ -576,7 +685,11 @@ function AddSubTaskContent() {
                       Use Epic Reporter
                     </Button>
                     <Text fontSize="sm" color="purple.600">
-                      ({extractUsernameFromEmail(currentEpic.reporter.emailAddress)})
+                      (
+                      {extractUsernameFromEmail(
+                        currentEpic.reporter.emailAddress
+                      )}
+                      )
                     </Text>
                   </Flex>
                 )}
@@ -594,9 +707,19 @@ function AddSubTaskContent() {
               <Button
                 type="submit"
                 colorPalette="green"
-                disabled={isCreating || !summary.trim() || success || isLoadingMetadata || 
-                         !componentId || !productId || !typeOfWork || !plannedStart || 
-                         !dueDate || !originalEstimate || !remainingEstimate}
+                disabled={
+                  isCreating ||
+                  !summary.trim() ||
+                  success ||
+                  isLoadingMetadata ||
+                  !componentId ||
+                  !productId ||
+                  !typeOfWork ||
+                  !plannedStart ||
+                  !dueDate ||
+                  !originalEstimate ||
+                  !remainingEstimate
+                }
               >
                 {isCreating ? (
                   <Flex align="center" gap={2}>
@@ -604,7 +727,7 @@ function AddSubTaskContent() {
                     Creating...
                   </Flex>
                 ) : (
-                  'Create Subtask'
+                  "Create Subtask"
                 )}
               </Button>
             </Flex>
@@ -619,7 +742,7 @@ function AddSubTaskContent() {
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 export default function AddSubTaskPage() {
@@ -627,5 +750,5 @@ export default function AddSubTaskPage() {
     <Suspense fallback={<Spinner />}>
       <AddSubTaskContent />
     </Suspense>
-  )
+  );
 }

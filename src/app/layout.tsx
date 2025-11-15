@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Jira Flash - Epic Task Management",
-  description: "Your friendly Jira assistant for managing epic tasks",
+  title: "Flash Hub - Your Assistant",
+  description:
+    "Your friendly assistant for saving time and boosting productivity.",
 };
 
 export default function RootLayout({
@@ -25,9 +26,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <Providers>
           <AppLayout>{children}</AppLayout>

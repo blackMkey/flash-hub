@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decodeToken } from "../../libs/tokenManager";
+import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -28,7 +28,6 @@ interface SubtaskPayload {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     const {
       parentKey,
       projectKey,
@@ -66,16 +65,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get encoded token from request headers
-
-    if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+    // Get token from session cookie
+    const auth = requireAuth(request);
+    if ("error" in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const decodedToken = decodeToken(token);
-
     const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Bearer " + decodedToken);
+    myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
     // Get project issue types using the correct endpoint
@@ -184,12 +181,12 @@ export async function POST(request: NextRequest) {
 
     // Create the subtask
     console.log(`🚀 Creating subtask with summary: "${summary}"`);
-        console.log('📦 Payload:', JSON.stringify(subtaskPayload, null, 2));
+    console.log("📦 Payload:", JSON.stringify(subtaskPayload, null, 2));
 
     const createResponse = await fetch(`${JIRA_BASE_URL}/rest/api/2/issue`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${decodedToken}`,
+        Authorization: `Bearer ${auth.token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(subtaskPayload),

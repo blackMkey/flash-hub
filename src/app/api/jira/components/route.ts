@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decodeToken } from "../../libs/tokenManager";
+import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -16,16 +16,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const token = request.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+    // Get token from session cookie
+    const auth = requireAuth(request);
+    if ("error" in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-
-    const decodedToken = decodeToken(token);
 
     console.log(`📦 Fetching components for project ID: ${projectId}`);
     const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Bearer " + decodedToken);
+    myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
     const response = await fetch(

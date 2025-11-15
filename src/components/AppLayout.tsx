@@ -1,10 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import {
-  Box,
-  Container,
-} from "@chakra-ui/react";
+import { Box, Container } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import AppHeader from "./AppHeader";
@@ -23,7 +20,7 @@ const getPageTitle = (pathname: string): string => {
     case "/epics/addSubTask":
       return "Add Sub-Task to Epic";
     default:
-      return "Jira Flash";
+      return "Flash Hub";
   }
 };
 
@@ -33,9 +30,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isHomePage = pathname === "/";
 
   // Auth store
-  const {
-    checkExistingAuth,
-  } = useAuthStore();
+  const { checkExistingAuth } = useAuthStore();
 
   useEffect(() => {
     // Check existing authentication on page load

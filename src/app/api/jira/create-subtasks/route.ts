@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decodeToken } from "../../libs/tokenManager";
+import { requireAuth } from "../../libs/authMiddleware";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -85,7 +85,6 @@ interface JiraBulkError {
 export async function POST(request: NextRequest) {
   try {
     const body: BulkSubtaskPayload = await request.json();
-    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     const { parentKey, projectKey, subtasks } = body;
 
     if (
@@ -103,14 +102,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+    // Get token from session cookie
+    const auth = requireAuth(request);
+    if ("error" in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const decodedToken = decodeToken(token);
-
     const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Bearer " + decodedToken);
+    myHeaders.append("Authorization", "Bearer " + auth.token);
     myHeaders.append("Content-Type", "application/json");
 
     // Get project issue types to find subtask type
