@@ -6,6 +6,7 @@ frontend:
         - npm install
     build:
       commands:
+        - env | grep TEAMS  # This will show if the env var is available
         - npm run build
   artifacts:
     baseDirectory: .next
