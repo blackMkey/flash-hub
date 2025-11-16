@@ -4,7 +4,7 @@ import { requireAuth } from "../libs/authMiddleware";
 import { createJiraHeaders } from "../libs/jiraHeaders";
 
 const JIRA_BASE_URL =
-  process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
+  process.env.JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
