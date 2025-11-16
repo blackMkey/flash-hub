@@ -16,6 +16,20 @@ import {
 import React, { useEffect, useState } from "react";
 import { useAzureAuthStore, useDataStore } from "@/stores";
 
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 interface Comment {
   text: string;
   createdDate: string;
@@ -26,6 +40,7 @@ interface WorkItem {
   id: string;
   title: string;
   state: string;
+  assignedTo: string;
   areaPath: string;
   createdDate: string;
   priority: number;
@@ -68,6 +83,13 @@ export default function AzureSLAPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // Teams notification state
+  const [selectedOverdueItems, setSelectedOverdueItems] = useState<Set<string>>(
+    new Set()
+  );
+  const [teamsMessage, setTeamsMessage] = useState("");
+  const [isSendingToTeams, setIsSendingToTeams] = useState(false);
 
   const toggleExpand = (itemId: string) => {
     setExpandedItems((prev) => {
@@ -126,6 +148,129 @@ export default function AzureSLAPage() {
       setError(err instanceof Error ? err.message : "Failed to fetch data");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Filter overdue work items
+  const overdueWorkItems = workItems.filter((item) => {
+    const now = new Date();
+    const workaroundOverdue =
+      new Date(item.workaroundDueDate) < now && !item.hasWorkaround;
+    const solutionOverdue =
+      new Date(item.solutionDueDate) < now && !item.hasSolution;
+
+    return workaroundOverdue || solutionOverdue;
+  });
+
+  // Toggle selection for overdue items
+  const toggleSelectOverdue = (itemId: string) => {
+    setSelectedOverdueItems((prev) => {
+      const newSet = new Set(prev);
+
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+
+      return newSet;
+    });
+  };
+
+  // Select all overdue items
+  const selectAllOverdue = () => {
+    setSelectedOverdueItems(new Set(overdueWorkItems.map((item) => item.id)));
+  };
+
+  // Clear all selections
+  const clearAllSelections = () => {
+    setSelectedOverdueItems(new Set());
+  };
+
+  // Generate Teams message
+  const generateTeamsMessage = () => {
+    const selectedItems = overdueWorkItems.filter((item) =>
+      selectedOverdueItems.has(item.id)
+    );
+
+    if (selectedItems.length === 0) {
+      setTeamsMessage("⚠️ No items selected");
+
+      return;
+    }
+
+    const message = `🚨 **SLA Overdue Alert**\n\n**${
+      selectedItems.length
+    } work item(s) are past due:**\n\n${selectedItems
+      .map((item) => {
+        const workaroundOverdue =
+          new Date(item.workaroundDueDate) < new Date() && !item.hasWorkaround;
+        const solutionOverdue =
+          new Date(item.solutionDueDate) < new Date() && !item.hasSolution;
+
+        const formatDate = (dateStr: string) => {
+          const date = new Date(dateStr);
+
+          const month = MONTHS[date.getMonth()];
+          const day = String(date.getDate()).padStart(2, "0");
+          const year = date.getFullYear();
+
+          return `${month}-${day}-${year}`;
+        };
+
+        return `**[${item.id}] ${item.title}**\n- Priority: P${
+          item.priority
+        }\n- Created: ${formatDate(item.createdDate)}\n- Assigned To: ${
+          item.assignedTo ? item.assignedTo : "Unassigned"
+        }\n${
+          workaroundOverdue
+            ? `- ⚠️ Workaround overdue: ${formatDate(item.workaroundDueDate)}\n`
+            : ""
+        }${
+          solutionOverdue
+            ? `- ⚠️ Solution overdue: ${formatDate(item.solutionDueDate)}\n`
+            : ""
+        }`;
+      })
+      .join("\n\n")}`;
+
+    setTeamsMessage(message);
+  };
+
+  // Send to Teams
+  const handleSendToTeams = async () => {
+    if (!teamsMessage || teamsMessage.includes("No items selected")) {
+      return;
+    }
+
+    setIsSendingToTeams(true);
+
+    try {
+      const response = await fetch("/api/teams/send-notification", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: teamsMessage,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send Teams notification");
+      }
+
+      alert("✅ Message sent to Teams successfully!");
+      clearAllSelections();
+      setTeamsMessage("");
+    } catch (err) {
+      alert(
+        `❌ Failed to send to Teams: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setIsSendingToTeams(false);
     }
   };
 
@@ -536,6 +681,187 @@ export default function AzureSLAPage() {
               Enter your Azure DevOps configuration and click &quot;Fetch Work
               Items&quot; to get started
             </Text>
+          </Box>
+        )}
+
+        {/* Overdue Items - Teams Notification Section */}
+        {overdueWorkItems.length > 0 && (
+          <Box
+            bg="orange.50"
+            borderRadius="xl"
+            border="1px solid"
+            borderColor="orange.200"
+            shadow="sm"
+            overflow="hidden"
+          >
+            <Box p={6}>
+              <Flex justify="space-between" align="center" mb={4}>
+                <Heading size="lg" color="orange.800">
+                  🚨 Overdue Items ({overdueWorkItems.length})
+                </Heading>
+                <Flex gap={2}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={selectAllOverdue}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={clearAllSelections}
+                  >
+                    Clear All
+                  </Button>
+                  <Button
+                    size="sm"
+                    colorPalette="blue"
+                    onClick={generateTeamsMessage}
+                    disabled={selectedOverdueItems.size === 0}
+                  >
+                    Generate Message
+                  </Button>
+                </Flex>
+              </Flex>
+
+              {/* Selectable Overdue Items Table */}
+              <Box overflowX="auto" mb={6}>
+                <Table.Root size="sm" variant="line">
+                  <Table.Header>
+                    <Table.Row bg="orange.100">
+                      <Table.ColumnHeader width="50px">
+                        Select
+                      </Table.ColumnHeader>
+                      <Table.ColumnHeader>ID</Table.ColumnHeader>
+                      <Table.ColumnHeader>Title</Table.ColumnHeader>
+                      <Table.ColumnHeader>Priority</Table.ColumnHeader>
+                      <Table.ColumnHeader>Assigned To</Table.ColumnHeader>
+                      <Table.ColumnHeader>Overdue Reason</Table.ColumnHeader>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {overdueWorkItems.map((item) => {
+                      const workaroundOverdue =
+                        new Date(item.workaroundDueDate) < new Date() &&
+                        !item.hasWorkaround;
+                      const solutionOverdue =
+                        new Date(item.solutionDueDate) < new Date() &&
+                        !item.hasSolution;
+
+                      return (
+                        <Table.Row
+                          key={item.id}
+                          bg={
+                            selectedOverdueItems.has(item.id)
+                              ? "blue.50"
+                              : "white"
+                          }
+                        >
+                          <Table.Cell>
+                            <input
+                              type="checkbox"
+                              checked={selectedOverdueItems.has(item.id)}
+                              onChange={() => toggleSelectOverdue(item.id)}
+                              style={{
+                                cursor: "pointer",
+                                width: "16px",
+                                height: "16px",
+                              }}
+                            />
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Badge colorPalette="blue">{item.id}</Badge>
+                          </Table.Cell>
+                          <Table.Cell maxW="300px" truncate title={item.title}>
+                            {item.title}
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Badge
+                              colorPalette={
+                                item.priority === 1
+                                  ? "red"
+                                  : item.priority === 2
+                                  ? "orange"
+                                  : "yellow"
+                              }
+                            >
+                              P{item.priority}
+                            </Badge>
+                          </Table.Cell>
+                          <Table.Cell>{item.assignedTo}</Table.Cell>
+                          <Table.Cell>
+                            <Stack gap={1}>
+                              {workaroundOverdue && (
+                                <Badge colorPalette="red" size="sm">
+                                  Workaround:{" "}
+                                  {new Date(
+                                    item.workaroundDueDate
+                                  ).toLocaleDateString()}
+                                </Badge>
+                              )}
+                              {solutionOverdue && (
+                                <Badge colorPalette="red" size="sm">
+                                  Solution:{" "}
+                                  {new Date(
+                                    item.solutionDueDate
+                                  ).toLocaleDateString()}
+                                </Badge>
+                              )}
+                            </Stack>
+                          </Table.Cell>
+                        </Table.Row>
+                      );
+                    })}
+                  </Table.Body>
+                </Table.Root>
+              </Box>
+
+              {/* Message Preview Section */}
+              {teamsMessage && (
+                <Box
+                  bg="white"
+                  p={4}
+                  borderRadius="lg"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  mb={4}
+                >
+                  <Heading size="sm" mb={3} color="gray.700">
+                    📝 Message Preview
+                  </Heading>
+                  <Box
+                    p={4}
+                    bg="gray.50"
+                    borderRadius="md"
+                    border="1px solid"
+                    borderColor="gray.300"
+                    whiteSpace="pre-wrap"
+                    fontSize="sm"
+                    fontFamily="monospace"
+                    maxH="400px"
+                    overflowY="auto"
+                  >
+                    {teamsMessage}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Send Button */}
+              {teamsMessage && !teamsMessage.includes("No items selected") && (
+                <Flex justify="flex-end">
+                  <Button
+                    colorPalette="green"
+                    size="lg"
+                    onClick={handleSendToTeams}
+                    loading={isSendingToTeams}
+                    loadingText="Sending..."
+                  >
+                    📤 Send to Teams
+                  </Button>
+                </Flex>
+              )}
+            </Box>
           </Box>
         )}
       </Stack>

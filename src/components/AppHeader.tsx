@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAzureAuthStore, useJiraAuthStore } from "@/stores";
 import TokenManager from "./TokenManager";
+import { useEffect } from "react";
+import { toaster } from "@/components/ui/toaster";
 
 interface AppHeaderProps {
   pageTitle: string;
@@ -18,21 +20,29 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
   const {
     isConnected: jiraConnected,
     isLoading: jiraLoading,
-    error: jiraError,
     user: jiraUser,
     saveToken: saveJiraToken,
     clearAuth: clearJiraAuth,
+    checkExistingAuth: checkJiraAuth,
   } = useJiraAuthStore();
 
   // Azure Auth store
   const {
     isConnected: azureConnected,
     isLoading: azureLoading,
-    error: azureError,
     user: azureUser,
     savePat: saveAzurePat,
     clearAuth: clearAzureAuth,
+    checkExistingAuth: checkAzureAuth,
   } = useAzureAuthStore();
+
+  useEffect(() => {
+    if (isAzurePage) {
+      checkAzureAuth(toaster.success, toaster.error);
+    } else {
+      checkJiraAuth(toaster.success, toaster.error);
+    }
+  }, [checkAzureAuth, checkJiraAuth, isAzurePage]);
 
   return (
     <>
@@ -50,7 +60,6 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
             type="jira"
             isConnected={jiraConnected}
             isLoading={jiraLoading}
-            error={jiraError}
             userName={jiraUser?.displayName}
             onSave={saveJiraToken}
             onClear={clearJiraAuth}
@@ -60,7 +69,6 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
             type="azure"
             isConnected={azureConnected}
             isLoading={azureLoading}
-            error={azureError}
             userName={azureUser?.displayName}
             onSave={saveAzurePat}
             onClear={clearAzureAuth}

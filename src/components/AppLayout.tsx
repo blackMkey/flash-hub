@@ -1,9 +1,8 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode } from "react";
 import { Box, Container } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
-import { useJiraAuthStore } from "@/stores";
 import AppHeader from "./AppHeader";
 
 interface AppLayoutProps {
@@ -28,15 +27,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
   const isHomePage = pathname === "/";
-
-  // Auth store
-  const { checkExistingAuth } = useJiraAuthStore();
-
-  useEffect(() => {
-    // Check existing authentication on page load
-    console.log("Checking existing authentication...");
-    checkExistingAuth();
-  }, [checkExistingAuth]);
 
   return (
     <Box

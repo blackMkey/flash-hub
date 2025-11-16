@@ -11,6 +11,7 @@ interface WorkItemResponse {
   id: string;
   title: string;
   state: string;
+  assignedTo: string;
   createdDate: string;
   priority: number;
   comments: Array<{
@@ -156,6 +157,7 @@ export async function POST(request: NextRequest) {
             id: item.id.toString(),
             title: fields["System.Title"] || "",
             state: fields["System.State"] || "",
+            assignedTo: fields["System.AssignedTo"]?.displayName || "",
             createdDate: fields["System.CreatedDate"] || "",
             priority: fields["Microsoft.VSTS.Common.Priority"] || 4,
             comments: [], // Will be populated in next step,

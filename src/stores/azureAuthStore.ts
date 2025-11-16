@@ -14,6 +14,11 @@ export interface AzureUser {
   id: string;
 }
 
+export interface messageProps {
+  title: string;
+  description: string;
+}
+
 export interface AzureAuthState {
   // State
   isConnected: boolean;
@@ -22,9 +27,17 @@ export interface AzureAuthState {
   error: string | null;
 
   // Actions
-  savePat: (pat: string, org: string) => Promise<boolean>;
-  clearAuth: () => Promise<void>;
-  checkExistingAuth: () => Promise<void>;
+  savePat: (
+    pat: string,
+    org: string,
+    onSuccess?: (message: messageProps) => void,
+    onError?: (message: messageProps) => void
+  ) => Promise<boolean>;
+  clearAuth: (callback?: (message: messageProps) => void) => Promise<void>;
+  checkExistingAuth: (
+    onSuccess?: (message: messageProps) => void,
+    onError?: (message: messageProps) => void
+  ) => Promise<void>;
 }
 
 export const useAzureAuthStore = create<AzureAuthState>()(
@@ -38,7 +51,12 @@ export const useAzureAuthStore = create<AzureAuthState>()(
         error: null,
 
         // Save PAT and verify connection
-        savePat: async (pat: string, org: string): Promise<boolean> => {
+        savePat: async (
+          pat: string,
+          org: string,
+          onSuccess?: (message: messageProps) => void,
+          onError?: (message: messageProps) => void
+        ): Promise<boolean> => {
           try {
             set({ isLoading: true, error: null }, false, "azure/savePat/start");
 
@@ -74,6 +92,12 @@ export const useAzureAuthStore = create<AzureAuthState>()(
               false,
               "azure/savePat/success"
             );
+            if (onSuccess) {
+              onSuccess({
+                title: "Authorization successful",
+                description: "Successfully connected to Azure DevOps",
+              });
+            }
 
             return true;
           } catch (error) {
@@ -92,14 +116,21 @@ export const useAzureAuthStore = create<AzureAuthState>()(
               false,
               "azure/savePat/error"
             );
+            if (onError) {
+              onError({
+                title: "Authorization failed",
+                description: errorMessage,
+              });
+            }
 
             return false;
           }
         },
 
         // Clear authentication
-        clearAuth: async () => {
+        clearAuth: async (callback?: (message: messageProps) => void) => {
           await TokenStorage.clearAzureAuth();
+
           set(
             {
               isConnected: false,
@@ -109,10 +140,19 @@ export const useAzureAuthStore = create<AzureAuthState>()(
             false,
             "azure/clearAuth"
           );
+          if (callback) {
+            callback({
+              title: "Authorization cleared",
+              description: "Azure DevOps credentials have been cleared",
+            });
+          }
         },
 
         // Check existing authentication on app start
-        checkExistingAuth: async () => {
+        checkExistingAuth: async (
+          onSuccess?: (message: messageProps) => void,
+          onError?: (message: messageProps) => void
+        ) => {
           try {
             set(
               { isLoading: true, error: null },
@@ -129,6 +169,12 @@ export const useAzureAuthStore = create<AzureAuthState>()(
             if (response.ok) {
               const userData = await response.json();
 
+              if (onSuccess) {
+                onSuccess({
+                  title: "Authorization successful",
+                  description: "Successfully connected to Azure DevOps",
+                });
+              }
               set(
                 {
                   isConnected: true,
@@ -139,6 +185,12 @@ export const useAzureAuthStore = create<AzureAuthState>()(
                 "azure/checkExistingAuth/success"
               );
             } else {
+              if (onError) {
+                onError({
+                  title: "Authorization failed",
+                  description: "No valid Azure session found",
+                });
+              }
               // Session invalid or expired
               set(
                 {
@@ -157,6 +209,12 @@ export const useAzureAuthStore = create<AzureAuthState>()(
               user: null,
               isLoading: false,
             });
+            if (onError) {
+              onError({
+                title: "Authorization failed",
+                description: "Error checking Azure authorization",
+              });
+            }
           }
         },
       }),

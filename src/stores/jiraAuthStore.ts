@@ -4,6 +4,10 @@ import { devtools, persist } from "zustand/middleware";
 import { TokenStorage } from "@/lib/tokenStorage";
 import type { User } from "@/services/jiraFetchers";
 
+export interface messageProps {
+  title: string;
+  description: string;
+}
 export interface AuthState {
   // State
   isConnected: boolean;
@@ -13,9 +17,16 @@ export interface AuthState {
   error: string | null;
 
   // Async Actions
-  saveToken: (originalToken: string) => Promise<boolean>;
-  clearAuth: () => Promise<void>;
-  checkExistingAuth: () => Promise<void>;
+  saveToken: (
+    originalToken: string,
+    onSuccess?: (message: messageProps) => void,
+    onError?: (message: messageProps) => void
+  ) => Promise<boolean>;
+  clearAuth: (callback?: (message: messageProps) => void) => Promise<void>;
+  checkExistingAuth: (
+    onSuccess?: (message: messageProps) => void,
+    onError?: (message: messageProps) => void
+  ) => Promise<void>;
 }
 
 export const useJiraAuthStore = create<AuthState>()(
@@ -30,7 +41,11 @@ export const useJiraAuthStore = create<AuthState>()(
         error: null,
 
         // Save token and fetch user info in one flow
-        saveToken: async (originalToken: string): Promise<boolean> => {
+        saveToken: async (
+          originalToken: string,
+          onSuccess?: (message: messageProps) => void,
+          onError?: (message: messageProps) => void
+        ): Promise<boolean> => {
           try {
             set(
               { isLoading: true, error: null },
@@ -78,6 +93,13 @@ export const useJiraAuthStore = create<AuthState>()(
               "auth/saveToken/success"
             );
 
+            if (onSuccess) {
+              onSuccess({
+                title: "Authorization successful",
+                description: "Successfully connected to Jira",
+              });
+            }
+
             return true;
           } catch (error) {
             const errorMessage =
@@ -94,12 +116,19 @@ export const useJiraAuthStore = create<AuthState>()(
               "auth/saveToken/error"
             );
 
+            if (onError) {
+              onError({
+                title: "Authorization failed",
+                description: errorMessage,
+              });
+            }
+
             return false;
           }
         },
 
         // Clear authentication
-        clearAuth: async () => {
+        clearAuth: async (callback?: (message: messageProps) => void) => {
           await TokenStorage.clearJiraToken();
           set(
             {
@@ -111,10 +140,19 @@ export const useJiraAuthStore = create<AuthState>()(
             false,
             "auth/clearAuth"
           );
+          if (callback) {
+            callback({
+              title: "Disconnected",
+              description: "Successfully disconnected from Jira",
+            });
+          }
         },
 
         // Check existing authentication on app start
-        checkExistingAuth: async () => {
+        checkExistingAuth: async (
+          onSuccess?: (message: messageProps) => void,
+          onError?: (message: messageProps) => void
+        ) => {
           const state = get();
 
           // Skip if already checked during this session
@@ -155,6 +193,12 @@ export const useJiraAuthStore = create<AuthState>()(
                 false,
                 "auth/checkExistingAuth/success"
               );
+              if (onSuccess) {
+                onSuccess({
+                  title: "Authorization successful",
+                  description: "Successfully connected to Jira",
+                });
+              }
             } else {
               // Session invalid or expired
               set(
@@ -164,8 +208,16 @@ export const useJiraAuthStore = create<AuthState>()(
               );
             }
           } catch (error) {
-            console.error("Failed to check existing auth:", error);
             set({ isConnected: false, user: null, isLoading: false });
+            if (onError) {
+              onError({
+                title: "Authorization failed",
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : "No valid Jira session found",
+              });
+            }
           }
         },
       }),

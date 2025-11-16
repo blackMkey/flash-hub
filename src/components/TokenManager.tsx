@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button, Flex, Input, Spinner, Text } from "@chakra-ui/react";
 import { toaster } from "@/components/ui/toaster";
 import { useDataStore } from "@/stores";
 
+interface messageProps {
+  title: string;
+  description: string;
+}
 interface BaseTokenManagerProps {
   isConnected: boolean;
   isLoading: boolean;
-  error: string | null;
   userName?: string;
-  onClear: () => void;
+  onClear: (callback?: (message: messageProps) => void) => void;
 }
-
 interface JiraTokenManagerProps extends BaseTokenManagerProps {
   type: "jira";
   onSave: (token: string) => Promise<boolean>;
@@ -20,7 +22,12 @@ interface JiraTokenManagerProps extends BaseTokenManagerProps {
 
 interface AzureTokenManagerProps extends BaseTokenManagerProps {
   type: "azure";
-  onSave: (token: string, org: string) => Promise<boolean>;
+  onSave: (
+    token: string,
+    org: string,
+    onSuccess?: (message: messageProps) => void,
+    onError?: (message: messageProps) => void
+  ) => Promise<boolean>;
 }
 
 type TokenManagerProps = JiraTokenManagerProps | AzureTokenManagerProps;
@@ -29,7 +36,6 @@ export default function TokenManager({
   type,
   isConnected,
   isLoading,
-  error,
   userName,
   onSave,
   onClear,
@@ -38,42 +44,27 @@ export default function TokenManager({
   const [token, setToken] = useState("");
   const [userOrg, setUserOrg] = useState("");
   const [showInput, setShowInput] = useState(false);
-  const lastErrorRef = useRef<string | null>(null);
 
   const displayName = type === "jira" ? "Jira" : "Azure DevOps";
 
   // Use storedOrg if user hasn't entered a value yet
   const org = userOrg || storedOrg || "";
 
-  // Show error toast when error changes (scheduled to avoid render conflicts)
-  useEffect(() => {
-    if (error && error !== lastErrorRef.current) {
-      setTimeout(() => {
-        toaster.error({
-          title: "Connection Error",
-          description: error,
-        });
-      }, 0);
-      lastErrorRef.current = error;
-    } else if (!error) {
-      lastErrorRef.current = null;
-    }
-  }, [error]);
-
   const handleSave = async () => {
     if (type === "azure") {
       if (!!token.trim() && !!org.trim()) {
-        const success = await onSave(token.trim(), org.trim());
+        const success = await onSave(
+          token.trim(),
+          org.trim(),
+          toaster.success,
+          toaster.error
+        );
 
         if (success) {
           setAzureOrg(org.trim());
           setToken("");
           setUserOrg(""); // Clear user input
           setShowInput(false);
-          toaster.success({
-            title: "Connected",
-            description: `Successfully connected to ${displayName}`,
-          });
         }
       }
     } else {
@@ -93,14 +84,10 @@ export default function TokenManager({
   };
 
   const handleClear = () => {
-    onClear();
+    onClear(toaster.info);
     setToken("");
     setUserOrg(""); // Clear user input
     setShowInput(false);
-    toaster.info({
-      title: "Disconnected",
-      description: `Disconnected from ${displayName}`,
-    });
   };
 
   const handleToggle = () => {
