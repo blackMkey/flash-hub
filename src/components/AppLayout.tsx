@@ -3,7 +3,7 @@
 import { type ReactNode, useEffect } from "react";
 import { Box, Container } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
-import { useAuthStore } from "@/stores";
+import { useJiraAuthStore } from "@/stores";
 import AppHeader from "./AppHeader";
 
 interface AppLayoutProps {
@@ -30,7 +30,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isHomePage = pathname === "/";
 
   // Auth store
-  const { checkExistingAuth } = useAuthStore();
+  const { checkExistingAuth } = useJiraAuthStore();
 
   useEffect(() => {
     // Check existing authentication on page load

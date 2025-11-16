@@ -18,7 +18,7 @@ export interface AuthState {
   checkExistingAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()(
+export const useJiraAuthStore = create<AuthState>()(
   devtools(
     persist(
       (set, get) => ({
@@ -39,7 +39,9 @@ export const useAuthStore = create<AuthState>()(
             );
 
             // Save token to server session (creates HttpOnly cookie)
-            const success = await TokenStorage.saveToken(originalToken.trim());
+            const success = await TokenStorage.saveJiraToken(
+              originalToken.trim()
+            );
 
             if (!success) {
               throw new Error("Failed to save token");
@@ -98,7 +100,7 @@ export const useAuthStore = create<AuthState>()(
 
         // Clear authentication
         clearAuth: async () => {
-          await TokenStorage.clearToken();
+          await TokenStorage.clearJiraToken();
           set(
             {
               isConnected: false,

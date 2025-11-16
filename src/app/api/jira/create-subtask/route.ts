@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
+import { createJiraHeaders } from "../../libs/jiraHeaders";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -72,21 +73,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const myHeaders = new Headers();
-
-    myHeaders.append("Authorization", "Bearer " + auth.token);
-    myHeaders.append("Content-Type", "application/json");
+    const headers = createJiraHeaders(auth.token);
 
     // Get project issue types using the correct endpoint
     const metaResponse = await fetch(
       `${JIRA_BASE_URL}/rest/api/2/issue/createmeta/${projectKey}/issuetypes`,
       {
         method: "GET",
-        headers: myHeaders,
+        headers,
       }
     );
-
-    console.log(`📡 Issue types response status: ${metaResponse.status}`);
 
     if (!metaResponse.ok) {
       const errorText = await metaResponse.text();
@@ -113,8 +109,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`🎯 Found subtask type ID: ${subtaskTypeId}`);
-
     if (!subtaskTypeId) {
       return NextResponse.json(
         { error: "No subtask issue type found in project" },
@@ -123,10 +117,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert date formats for Jira
-    console.log(
-      `📅 Converting dates - Original plannedStart: ${plannedStart}, dueDate: ${dueDate}`
-    );
-
     // Convert HTML datetime-local to Jira ISO format with +0000 timezone
     // plannedStart comes from HTML input as "2025-10-28T14:30", convert to "2025-10-28T14:30:00.000+0000"
     const plannedStartDate = new Date(plannedStart);
@@ -137,10 +127,6 @@ export async function POST(request: NextRequest) {
     // Convert HTML date to ISO date format for Jira
     // dueDate comes from HTML input as "2025-10-28", keep as ISO date
     const formattedDueDate = dueDate;
-
-    console.log(
-      `📅 Converted dates - plannedStart: ${formattedPlannedStart}, dueDate: ${formattedDueDate}`
-    );
 
     // Prepare subtask creation payload
     const subtaskPayload: SubtaskPayload = {
@@ -185,19 +171,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the subtask
-    console.log(`🚀 Creating subtask with summary: "${summary}"`);
-    console.log("📦 Payload:", JSON.stringify(subtaskPayload, null, 2));
-
     const createResponse = await fetch(`${JIRA_BASE_URL}/rest/api/2/issue`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${auth.token}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(subtaskPayload),
     });
-
-    console.log(`📡 Create subtask response status: ${createResponse.status}`);
 
     if (!createResponse.ok) {
       const errorData = await createResponse.json();
@@ -214,8 +192,6 @@ export async function POST(request: NextRequest) {
     }
 
     const createdSubtask = await createResponse.json();
-
-    console.log(`✅ Successfully created subtask: ${createdSubtask.key}`);
 
     return NextResponse.json({
       success: true,

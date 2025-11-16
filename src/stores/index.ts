@@ -1,7 +1,9 @@
 // Store exports
-export { useAuthStore } from './authStore'
-export { useDataStore } from './dataStore'
+export { useJiraAuthStore } from "./jiraAuthStore";
+export { useAzureAuthStore } from "./azureAuthStore";
+export { useDataStore } from "./dataStore";
 
 // Types
-export type { AuthState } from './authStore'
-export type { DataState } from './dataStore'
+export type { AuthState } from "./jiraAuthStore";
+export type { AzureAuthState, AzureConfig, AzureUser } from "./azureAuthStore";
+export type { DataState } from "./dataStore";

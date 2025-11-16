@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
+import { createJiraHeaders } from "../../libs/jiraHeaders";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -50,24 +51,16 @@ export async function GET(
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    console.log(
-      `🔗 Fetching defect patterns for issueId: ${issueId}, projectId: ${projectId}`
-    );
-    const myHeaders = new Headers();
-
-    myHeaders.append("Authorization", "Bearer " + auth.token);
-    myHeaders.append("Content-Type", "application/json");
+    const headers = createJiraHeaders(auth.token);
 
     // Call Jira API for defect patterns
     const response = await fetch(
       `${JIRA_BASE_URL}/rest/customfield/1.0/defect-pattern?issueId=${issueId}&projectId=${projectId}`,
       {
         method: "GET",
-        headers: myHeaders,
+        headers,
       }
     );
-
-    console.log(`📡 Defect patterns response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -84,8 +77,6 @@ export async function GET(
 
     const defectPatterns = await response.json();
 
-    console.log(`✅ Successfully fetched defect patterns data`);
-
     // Extract product options from the nested structure: result.map.Product.options
     let productOptions: ProductOption[] = [];
 
@@ -99,9 +90,6 @@ export async function GET(
           value: id, // The key is the value
           label: label as string, // The value is the display text
         }));
-        console.log(`📦 Extracted ${productOptions.length} product options`);
-      } else {
-        console.log(`⚠️ Product options not found in expected structure`);
       }
     } catch (error) {
       console.error(`❌ Error extracting product options:`, error);

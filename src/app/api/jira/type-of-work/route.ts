@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
+import { createJiraHeaders } from "../../libs/jiraHeaders";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -24,24 +25,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const myHeaders = new Headers();
-
-    myHeaders.append("Authorization", "Bearer " + auth.token);
-    myHeaders.append("Content-Type", "application/json");
-
-    console.log(
-      `🔧 Fetching type of work for project ID: ${projectId}, issue: ${issueKey}`
-    );
+    const headers = createJiraHeaders(auth.token);
 
     const response = await fetch(
       `${JIRA_BASE_URL}/rest/customfield/1.0/constraint/get-tow-by-product?projectId=${projectId}&issueKey=${issueKey}&issueType=Sub-task`,
       {
         method: "GET",
-        headers: myHeaders,
+        headers,
       }
     );
-
-    console.log(`📡 Type of work response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -57,8 +49,6 @@ export async function GET(request: NextRequest) {
     }
 
     const typeOfWorkData = await response.json();
-
-    console.log(`✅ Successfully fetched type of work options`);
 
     return NextResponse.json({
       success: true,

@@ -1,14 +1,7 @@
-'use client'
+"use client";
 
-import {
-  Box,
-  Button,
-  Flex,
-  Image,
-  Stack,
-  Text,
-} from '@chakra-ui/react'
-import Link from 'next/link'
+import { Box, Button, Flex, Image, Stack, Text } from "@chakra-ui/react";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -23,10 +16,10 @@ export default function Home() {
         bgImage="radial-gradient(circle at 25% 25%, #90ee90 3px, transparent 3px)"
         bgSize="40px 40px"
       />
-      
-      <Flex 
-        direction={{ base: "column", lg: "row" }} 
-        align="center" 
+
+      <Flex
+        direction={{ base: "column", lg: "row" }}
+        align="center"
         justify="space-between"
         minH="70vh"
         gap={12}
@@ -34,15 +27,15 @@ export default function Home() {
       >
         {/* Left Content */}
         <Stack gap={8} flex="1" maxW="600px">
-          <Box 
-            bg="rgba(255,255,255,0.85)" 
+          <Box
+            bg="rgba(255,255,255,0.85)"
             backdropFilter="blur(10px)"
             p={6}
             borderRadius="2xl"
             border="2px solid rgba(144,238,144,0.3)"
             shadow="lg"
           >
-            <Text 
+            <Text
               fontSize={{ base: "xl", md: "2xl" }}
               color="gray.700"
               fontWeight="medium"
@@ -51,15 +44,15 @@ export default function Home() {
             >
               &ldquo;Niceeeee tooooo meeet youuuu...&rdquo;
             </Text>
-            <Text 
+            <Text
               fontSize={{ base: "lg", md: "xl" }}
               color="gray.600"
               mt={4}
               textAlign="center"
             >
-              Hi! I&apos;m Flash, your friendly Jira assistant. 
+              Hi! I&apos;m Flash, your friendly Jira assistant.
               <br />
-              What would you like help with today?  🦥
+              What would you like help with today? 🦥
             </Text>
           </Box>
 
@@ -78,31 +71,50 @@ export default function Home() {
                 _hover={{
                   transform: "translateY(-2px)",
                   shadow: "3xl",
-                  bg: "linear-gradient(45deg, #98fb98, #3cb371)"
+                  bg: "linear-gradient(45deg, #98fb98, #3cb371)",
                 }}
                 transition="all 0.3s ease"
               >
                 Browse Epic Tasks
               </Button>
             </Link>
-            
-            <Text 
-              fontSize="sm" 
-              color="gray.500"
-              textAlign="center"
-            >
+
+            <Link href="/azure-sla" passHref>
+              <Button
+                size="xl"
+                bg="linear-gradient(45deg, #4a90e2, #357abd)"
+                color="white"
+                fontSize="xl"
+                fontWeight="bold"
+                px={12}
+                py={8}
+                borderRadius="full"
+                shadow="2xl"
+                _hover={{
+                  transform: "translateY(-2px)",
+                  shadow: "3xl",
+                  bg: "linear-gradient(45deg, #5fa3f5, #4a8fcc)",
+                }}
+                transition="all 0.3s ease"
+              >
+                Azure SLA Tracker
+              </Button>
+            </Link>
+
+            <Text fontSize="sm" color="gray.500" textAlign="center">
               Ready when you are... no rush! 🚀
             </Text>
           </Stack>
         </Stack>
 
         {/* Right - Flash Image */}
-        <Box flex="1" display="flex" justifyContent="center" alignItems="center">
-          <Box
-            position="relative"
-            maxW="500px"
-            w="100%"
-          >
+        <Box
+          flex="1"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Box position="relative" maxW="500px" w="100%">
             <Box
               position="absolute"
               top="-20px"
@@ -127,5 +139,5 @@ export default function Home() {
         </Box>
       </Flex>
     </>
-  )
+  );
 }

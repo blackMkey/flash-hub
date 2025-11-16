@@ -1,8 +1,20 @@
-// In-memory session store for Jira tokens
+// In-memory session store for authentication tokens (Jira & Azure)
 // Works well with AWS Amplify's session affinity
 
+type ServiceType = "jira" | "azure";
+
+interface SessionData {
+  jira?: {
+    token: string;
+  };
+  azure?: {
+    pat: string;
+    org: string;
+  };
+}
+
 interface Session {
-  token: string;
+  data: SessionData;
   createdAt: number;
   lastAccessed: number;
 }
@@ -27,11 +39,11 @@ class SessionStore {
   }
 
   // Create new session
-  createSession(token: string): string {
+  createSession(): string {
     const sessionId = this.generateSessionId();
 
     this.sessions.set(sessionId, {
-      token,
+      data: {},
       createdAt: Date.now(),
       lastAccessed: Date.now(),
     });
@@ -42,8 +54,60 @@ class SessionStore {
     return sessionId;
   }
 
-  // Get token by session ID
-  getToken(sessionId: string): string | null {
+  // Get or create session
+  private getOrCreateSession(sessionId?: string): {
+    sessionId: string;
+    session: Session;
+  } {
+    if (sessionId) {
+      const session = this.sessions.get(sessionId);
+
+      if (session) {
+        const now = Date.now();
+
+        if (now - session.lastAccessed <= this.SESSION_TIMEOUT) {
+          session.lastAccessed = now;
+
+          return { sessionId, session };
+        }
+
+        // Expired, delete it
+        this.sessions.delete(sessionId);
+      }
+    }
+
+    // Create new session
+    const newSessionId = this.createSession();
+    const newSession = this.sessions.get(newSessionId)!;
+
+    return { sessionId: newSessionId, session: newSession };
+  }
+
+  // Set service credentials
+  setServiceAuth(
+    sessionId: string | undefined,
+    service: ServiceType,
+    credentials: SessionData[ServiceType]
+  ): string {
+    const { sessionId: finalSessionId, session } =
+      this.getOrCreateSession(sessionId);
+
+    if (service === "jira") {
+      session.data.jira = credentials as SessionData["jira"];
+      console.log(`✅ Jira auth saved to session: ${finalSessionId}`);
+    } else {
+      session.data.azure = credentials as SessionData["azure"];
+      console.log(`✅ Azure auth saved to session: ${finalSessionId}`);
+    }
+
+    return finalSessionId;
+  }
+
+  // Get service credentials
+  getServiceAuth<T extends ServiceType>(
+    sessionId: string,
+    service: T
+  ): SessionData[T] | null {
     const session = this.sessions.get(sessionId);
 
     if (!session) {
@@ -65,10 +129,36 @@ class SessionStore {
     // Update last accessed time
     session.lastAccessed = now;
 
-    return session.token;
+    return (session.data[service] as SessionData[T]) || null;
   }
 
-  // Delete session
+  // Legacy method for backward compatibility
+  getToken(sessionId: string): string | null {
+    const jiraAuth = this.getServiceAuth(sessionId, "jira");
+
+    return jiraAuth?.token || null;
+  }
+
+  // Clear specific service auth
+  clearServiceAuth(sessionId: string, service: ServiceType): boolean {
+    const session = this.sessions.get(sessionId);
+
+    if (!session) {
+      return false;
+    }
+
+    delete session.data[service];
+    console.log(`🗑️  ${service} auth cleared from session: ${sessionId}`);
+
+    // If session is empty, delete it
+    if (Object.keys(session.data).length === 0) {
+      return this.deleteSession(sessionId);
+    }
+
+    return true;
+  }
+
+  // Delete entire session
   deleteSession(sessionId: string): boolean {
     const deleted = this.sessions.delete(sessionId);
 

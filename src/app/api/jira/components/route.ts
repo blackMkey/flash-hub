@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
+import { createJiraHeaders } from "../../libs/jiraHeaders";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -23,21 +24,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    console.log(`📦 Fetching components for project ID: ${projectId}`);
-    const myHeaders = new Headers();
-
-    myHeaders.append("Authorization", "Bearer " + auth.token);
-    myHeaders.append("Content-Type", "application/json");
+    const headers = createJiraHeaders(auth.token);
 
     const response = await fetch(
       `${JIRA_BASE_URL}/rest/api/2/component/page?projectIds=${projectId}`,
       {
         method: "GET",
-        headers: myHeaders,
+        headers,
       }
     );
-
-    console.log(`📡 Components response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -53,10 +48,6 @@ export async function GET(request: NextRequest) {
     }
 
     const componentsData = await response.json();
-
-    console.log(
-      `✅ Successfully fetched ${componentsData.values?.length || 0} components`
-    );
 
     return NextResponse.json({
       success: true,

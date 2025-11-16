@@ -15,7 +15,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { useAuthStore, useDataStore } from "@/stores";
+import { useJiraAuthStore, useDataStore } from "@/stores";
 import { useEpic } from "@/services/jiraQueries";
 import { useExcelExport } from "@/services/useExcelExport";
 import Link from "next/link";
@@ -33,7 +33,7 @@ export default function EpicsPage() {
     saveToken,
     clearAuth,
     checkExistingAuth,
-  } = useAuthStore();
+  } = useJiraAuthStore();
 
   // Data store
   const {

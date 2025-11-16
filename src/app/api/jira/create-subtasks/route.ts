@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../../libs/authMiddleware";
+import { createJiraHeaders } from "../../libs/jiraHeaders";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -109,21 +110,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const myHeaders = new Headers();
-
-    myHeaders.append("Authorization", "Bearer " + auth.token);
-    myHeaders.append("Content-Type", "application/json");
+    const headers = createJiraHeaders(auth.token);
 
     // Get project issue types to find subtask type
     const metaResponse = await fetch(
       `${JIRA_BASE_URL}/rest/api/2/issue/createmeta/${projectKey}/issuetypes`,
       {
         method: "GET",
-        headers: myHeaders,
+        headers,
       }
     );
-
-    console.log(`📡 Issue types response status: ${metaResponse.status}`);
 
     if (!metaResponse.ok) {
       const errorText = await metaResponse.text();
@@ -149,8 +145,6 @@ export async function POST(request: NextRequest) {
         break;
       }
     }
-
-    console.log(`🎯 Found subtask type ID: ${subtaskTypeId}`);
 
     if (!subtaskTypeId) {
       return NextResponse.json(
@@ -229,15 +223,12 @@ export async function POST(request: NextRequest) {
       issueUpdates,
     };
 
-    console.log(
-      `🚀 Creating ${subtasks.length} subtasks in bulk for parent: ${parentKey}`
-    );
-    console.log(`📦 Bulk payload:`, JSON.stringify(bulkPayload, null, 2));
-
     return NextResponse.json(
       {
         error: "Internal server error",
         result: "Unknown error",
+        body: JSON.stringify(bulkPayload, null, 2),
+        bulkPayload,
       },
       { status: 500 }
     );

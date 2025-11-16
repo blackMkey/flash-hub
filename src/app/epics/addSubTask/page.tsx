@@ -14,7 +14,7 @@ import {
   Textarea,
 } from "@chakra-ui/react";
 import { Suspense, useEffect, useState } from "react";
-import { useAuthStore, useDataStore } from "@/stores";
+import { useJiraAuthStore, useDataStore } from "@/stores";
 import { useRouter, useSearchParams } from "next/navigation";
 import { validateTimeTrackingFormat } from "@/utils/jiraDateUtils";
 import {
@@ -51,7 +51,7 @@ function AddSubTaskContent() {
   const [success, setSuccess] = useState(false);
 
   // Auth store
-  const { isConnected, user } = useAuthStore();
+  const { isConnected, user } = useJiraAuthStore();
 
   // Data store
   const { currentEpic, setCurrentEpic, setEpicError } = useDataStore();

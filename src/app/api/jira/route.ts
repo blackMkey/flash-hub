@@ -1,6 +1,7 @@
 // Jira API proxy to handle CORS issues
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../libs/authMiddleware";
+import { createJiraHeaders } from "../libs/jiraHeaders";
 
 const JIRA_BASE_URL =
   process.env.NEXT_PUBLIC_JIRA_DOMAIN || "https://insight.fsoft.com.vn/jira9";
@@ -25,19 +26,14 @@ export async function GET(request: NextRequest) {
 
   const jiraUrl = `${JIRA_BASE_URL}/rest/api/2/${endpoint}`;
 
-  const myHeaders = new Headers();
+  // Use browser-like headers to bypass Cloudflare protection
+  const headers = createJiraHeaders(auth.token);
 
-  myHeaders.append("Authorization", "Bearer " + auth.token);
-  myHeaders.append("Content-Type", "application/json");
   try {
-    console.log(`🔗 Proxying request to: ${jiraUrl}`);
-
     const response = await fetch(jiraUrl, {
       method: "GET",
-      headers: myHeaders,
+      headers,
     });
-
-    console.log(`📡 Jira response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -54,8 +50,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-
-    console.log(`✅ Successfully proxied Jira request`);
 
     return NextResponse.json(data);
   } catch (error) {
@@ -94,20 +88,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log(`🔗 Proxying POST request to: ${jiraUrl}`);
-
-    const myHeaders = new Headers();
-
-    myHeaders.append("Authorization", "Bearer " + auth.token);
-    myHeaders.append("Content-Type", "application/json");
+    // Use browser-like headers to bypass Cloudflare protection
+    const headers = createJiraHeaders(auth.token);
 
     const response = await fetch(jiraUrl, {
       method: "POST",
-      headers: myHeaders,
+      headers,
       body: JSON.stringify(body),
     });
-
-    console.log(`📡 Jira response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -124,8 +112,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-
-    console.log(`✅ Successfully proxied POST Jira request`);
 
     return NextResponse.json(data);
   } catch (error) {
