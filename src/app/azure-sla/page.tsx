@@ -8,6 +8,7 @@ import {
   Grid,
   Heading,
   Input,
+  InputGroup,
   Spinner,
   Stack,
   Table,
@@ -95,6 +96,16 @@ export default function AzureSLAPage() {
   const [sortField, setSortField] = useState<keyof AzureWorkItem | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [filterText, setFilterText] = useState("");
+  const [debouncedFilterText, setDebouncedFilterText] = useState("");
+
+  // Debounce filter text with 500ms delay
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedFilterText(filterText);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [filterText]);
 
   const toggleExpand = (itemId: string) => {
     setExpandedItems((prev) => {
@@ -149,14 +160,20 @@ export default function AzureSLAPage() {
   const filteredAndSortedWorkItems = React.useMemo(() => {
     let filtered = workItems;
 
-    // Apply text filter
-    if (filterText) {
+    // Apply text filter (using debounced value)
+    if (debouncedFilterText) {
       filtered = filtered.filter(
         (item) =>
-          item.id.toLowerCase().includes(filterText.toLowerCase()) ||
-          item.title.toLowerCase().includes(filterText.toLowerCase()) ||
-          item.state.toLowerCase().includes(filterText.toLowerCase()) ||
-          item.assignedTo?.toLowerCase().includes(filterText.toLowerCase())
+          item.id.toLowerCase().includes(debouncedFilterText.toLowerCase()) ||
+          item.title
+            .toLowerCase()
+            .includes(debouncedFilterText.toLowerCase()) ||
+          item.state
+            .toLowerCase()
+            .includes(debouncedFilterText.toLowerCase()) ||
+          item.assignedTo
+            ?.toLowerCase()
+            .includes(debouncedFilterText.toLowerCase())
       );
     }
 
@@ -200,7 +217,7 @@ export default function AzureSLAPage() {
     }
 
     return filtered;
-  }, [workItems, filterText, sortField, sortDirection]);
+  }, [workItems, debouncedFilterText, sortField, sortDirection]);
 
   // Filter overdue work items
   const overdueWorkItems = workItems.filter((item) => {
@@ -503,12 +520,14 @@ export default function AzureSLAPage() {
           >
             {/* Filter Input */}
             <Box p={4} borderBottom="1px solid" borderColor="gray.200">
-              <Input
-                placeholder="🔍 Filter by ID, Title, State, or Assigned To..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                size="md"
-              />
+              <InputGroup startElement={<Box>🔍</Box>}>
+                <Input
+                  placeholder="Filter by ID, Title, State, or Assigned To..."
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
+                  size="md"
+                />
+              </InputGroup>
               {filterText && (
                 <Text fontSize="sm" color="gray.600" mt={2}>
                   Showing {filteredAndSortedWorkItems.length} of{" "}
