@@ -24,6 +24,12 @@ interface WorkItemResponse {
   hasWorkaround?: boolean;
   hasSolution?: boolean;
 }
+const PRIORITY_MAPPING: { [key: string]: number } = {
+  Low: 4,
+  Medium: 3,
+  High: 2,
+  Critical: 1,
+};
 const WORK_AROUND_KEY = "workaround";
 const SOLUTION_KEY = "solution";
 const priorityRules: Record<
@@ -159,7 +165,7 @@ export async function POST(request: NextRequest) {
             state: fields["System.State"] || "",
             assignedTo: fields["System.AssignedTo"]?.displayName || "",
             createdDate: fields["System.CreatedDate"] || "",
-            priority: fields["Microsoft.VSTS.Common.Priority"] || 4,
+            priority: priorityInNumber(fields["Custom.Priority1"] || ""),
             comments: [], // Will be populated in next step,
             workaroundDueDate: "",
             solutionDueDate: "",
@@ -236,6 +242,10 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+const priorityInNumber = (field: string): number => {
+  return PRIORITY_MAPPING[field] || 4;
+};
 
 const calculateDueDate = (
   createDateStr: string,

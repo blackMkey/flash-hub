@@ -15,6 +15,11 @@ import {
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { useAzureAuthStore, useDataStore } from "@/stores";
+import {
+  type AzureWorkItem,
+  type FetchWorkItemsParams,
+  useAzureWorkItems,
+} from "@/services/azureQueries";
 
 const MONTHS = [
   "Jan",
@@ -30,26 +35,6 @@ const MONTHS = [
   "Nov",
   "Dec",
 ];
-interface Comment {
-  text: string;
-  createdDate: string;
-  createdBy: string;
-}
-
-interface WorkItem {
-  id: string;
-  title: string;
-  state: string;
-  assignedTo: string;
-  areaPath: string;
-  createdDate: string;
-  priority: number;
-  comments: Comment[];
-  workaroundDueDate: string;
-  solutionDueDate: string;
-  hasWorkaround?: boolean;
-  hasSolution?: boolean;
-}
 
 export default function AzureSLAPage() {
   // Azure Auth Store
@@ -78,10 +63,25 @@ export default function AzureSLAPage() {
     checkExistingAuth();
   }, [checkExistingAuth]);
 
-  // Data state
-  const [workItems, setWorkItems] = useState<WorkItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Query parameters state
+  const [queryParams, setQueryParams] = useState<FetchWorkItemsParams | null>(
+    null
+  );
+
+  // Fetch work items using React Query
+  const {
+    data: workItemsData,
+    isLoading,
+    error: queryError,
+  } = useAzureWorkItems(queryParams, !!queryParams);
+
+  const workItems = React.useMemo(
+    () => workItemsData?.workItems || [],
+    [workItemsData]
+  );
+  const error = queryError ? (queryError as Error).message : null;
+
+  // UI state
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   // Teams notification state
@@ -90,6 +90,11 @@ export default function AzureSLAPage() {
   );
   const [teamsMessage, setTeamsMessage] = useState("");
   const [isSendingToTeams, setIsSendingToTeams] = useState(false);
+
+  // Sort and filter state
+  const [sortField, setSortField] = useState<keyof AzureWorkItem | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [filterText, setFilterText] = useState("");
 
   const toggleExpand = (itemId: string) => {
     setExpandedItems((prev) => {
@@ -105,51 +110,97 @@ export default function AzureSLAPage() {
     });
   };
 
-  const handleFetchWorkItems = async () => {
-    if (!project || !areaPath || !startDate || !endDate) {
-      setError("All fields are required");
+  // Sort handler
+  const handleSort = (field: keyof AzureWorkItem) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
+  const handleFetchWorkItems = () => {
+    if (!project || !areaPath || !startDate || !endDate) {
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    // Save to data store
+    setAzureAreaPath(areaPath.trim());
+    setAzureProject(project.trim());
 
-    try {
-      const response = await fetch("/api/azure/work-items", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          project,
-          areaPath,
-          startDate,
-          endDate,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-
-        if (errorData.error.includes("authentication")) {
-          clearAuth();
-        }
-        throw new Error(errorData.error || "Failed to fetch work items");
-      }
-
-      const data = await response.json();
-
-      setAzureAreaPath(areaPath.trim());
-      setAzureProject(project.trim());
-      setWorkItems(data.workItems || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch data");
-    } finally {
-      setIsLoading(false);
-    }
+    // Trigger query by setting params
+    setQueryParams({
+      project: project.trim(),
+      areaPath: areaPath.trim(),
+      startDate,
+      endDate,
+    });
   };
+
+  // Handle auth errors from query
+  useEffect(() => {
+    if (error && error.includes("authentication")) {
+      clearAuth();
+    }
+  }, [error, clearAuth]);
+
+  // Filter and sort work items
+  const filteredAndSortedWorkItems = React.useMemo(() => {
+    let filtered = workItems;
+
+    // Apply text filter
+    if (filterText) {
+      filtered = filtered.filter(
+        (item) =>
+          item.id.toLowerCase().includes(filterText.toLowerCase()) ||
+          item.title.toLowerCase().includes(filterText.toLowerCase()) ||
+          item.state.toLowerCase().includes(filterText.toLowerCase()) ||
+          item.assignedTo?.toLowerCase().includes(filterText.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    if (sortField) {
+      filtered = [...filtered].sort((a, b) => {
+        let aVal = a[sortField];
+        let bVal = b[sortField];
+
+        // Handle null/undefined values
+        if (aVal === null || aVal === undefined) {
+          if (bVal === null || bVal === undefined) return 0;
+
+          return sortDirection === "asc" ? 1 : -1;
+        }
+        if (bVal === null || bVal === undefined) {
+          return sortDirection === "asc" ? -1 : 1;
+        }
+
+        // Handle date fields
+        if (
+          sortField === "createdDate" ||
+          sortField === "workaroundDueDate" ||
+          sortField === "solutionDueDate"
+        ) {
+          aVal = new Date(aVal as string).getTime();
+          bVal = new Date(bVal as string).getTime();
+        }
+
+        // Handle priority (number)
+        if (sortField === "priority") {
+          aVal = Number(aVal);
+          bVal = Number(bVal);
+        }
+
+        if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [workItems, filterText, sortField, sortDirection]);
 
   // Filter overdue work items
   const overdueWorkItems = workItems.filter((item) => {
@@ -450,30 +501,129 @@ export default function AzureSLAPage() {
             shadow="sm"
             overflow="hidden"
           >
+            {/* Filter Input */}
+            <Box p={4} borderBottom="1px solid" borderColor="gray.200">
+              <Input
+                placeholder="🔍 Filter by ID, Title, State, or Assigned To..."
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                size="md"
+              />
+              {filterText && (
+                <Text fontSize="sm" color="gray.600" mt={2}>
+                  Showing {filteredAndSortedWorkItems.length} of{" "}
+                  {workItems.length} items
+                </Text>
+              )}
+            </Box>
             <Box overflowX="auto">
               <Table.Root size="lg" variant="line">
                 <Table.Header>
                   <Table.Row bg="gray.50">
-                    <Table.ColumnHeader fontWeight="bold">
-                      ID
+                    <Table.ColumnHeader
+                      fontWeight="bold"
+                      cursor="pointer"
+                      onClick={() => handleSort("id")}
+                      _hover={{ bg: "gray.100" }}
+                    >
+                      <Flex align="center" gap={1}>
+                        ID
+                        {sortField === "id" && (
+                          <Text fontSize="xs">
+                            {sortDirection === "asc" ? "▲" : "▼"}
+                          </Text>
+                        )}
+                      </Flex>
                     </Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="bold">
-                      Title
+                    <Table.ColumnHeader
+                      fontWeight="bold"
+                      cursor="pointer"
+                      onClick={() => handleSort("title")}
+                      _hover={{ bg: "gray.100" }}
+                    >
+                      <Flex align="center" gap={1}>
+                        Title
+                        {sortField === "title" && (
+                          <Text fontSize="xs">
+                            {sortDirection === "asc" ? "▲" : "▼"}
+                          </Text>
+                        )}
+                      </Flex>
                     </Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="bold">
-                      State
+                    <Table.ColumnHeader
+                      fontWeight="bold"
+                      cursor="pointer"
+                      onClick={() => handleSort("state")}
+                      _hover={{ bg: "gray.100" }}
+                    >
+                      <Flex align="center" gap={1}>
+                        State
+                        {sortField === "state" && (
+                          <Text fontSize="xs">
+                            {sortDirection === "asc" ? "▲" : "▼"}
+                          </Text>
+                        )}
+                      </Flex>
                     </Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="bold">
-                      Priority
+                    <Table.ColumnHeader
+                      fontWeight="bold"
+                      cursor="pointer"
+                      onClick={() => handleSort("priority")}
+                      _hover={{ bg: "gray.100" }}
+                    >
+                      <Flex align="center" gap={1}>
+                        Priority
+                        {sortField === "priority" && (
+                          <Text fontSize="xs">
+                            {sortDirection === "asc" ? "▲" : "▼"}
+                          </Text>
+                        )}
+                      </Flex>
                     </Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="bold">
-                      Created Date
+                    <Table.ColumnHeader
+                      fontWeight="bold"
+                      cursor="pointer"
+                      onClick={() => handleSort("createdDate")}
+                      _hover={{ bg: "gray.100" }}
+                    >
+                      <Flex align="center" gap={1}>
+                        Created Date
+                        {sortField === "createdDate" && (
+                          <Text fontSize="xs">
+                            {sortDirection === "asc" ? "▲" : "▼"}
+                          </Text>
+                        )}
+                      </Flex>
                     </Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="bold">
-                      Workaround Due
+                    <Table.ColumnHeader
+                      fontWeight="bold"
+                      cursor="pointer"
+                      onClick={() => handleSort("workaroundDueDate")}
+                      _hover={{ bg: "gray.100" }}
+                    >
+                      <Flex align="center" gap={1}>
+                        Workaround Due
+                        {sortField === "workaroundDueDate" && (
+                          <Text fontSize="xs">
+                            {sortDirection === "asc" ? "▲" : "▼"}
+                          </Text>
+                        )}
+                      </Flex>
                     </Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="bold">
-                      Solution Due
+                    <Table.ColumnHeader
+                      fontWeight="bold"
+                      cursor="pointer"
+                      onClick={() => handleSort("solutionDueDate")}
+                      _hover={{ bg: "gray.100" }}
+                    >
+                      <Flex align="center" gap={1}>
+                        Solution Due
+                        {sortField === "solutionDueDate" && (
+                          <Text fontSize="xs">
+                            {sortDirection === "asc" ? "▲" : "▼"}
+                          </Text>
+                        )}
+                      </Flex>
                     </Table.ColumnHeader>
                     <Table.ColumnHeader fontWeight="bold">
                       Status
@@ -481,7 +631,7 @@ export default function AzureSLAPage() {
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                  {workItems.map((item) => {
+                  {filteredAndSortedWorkItems.map((item) => {
                     const isExpanded = expandedItems.has(item.id);
 
                     return (
