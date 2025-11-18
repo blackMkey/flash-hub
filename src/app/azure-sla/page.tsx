@@ -98,6 +98,9 @@ export default function AzureSLAPage() {
   const [filterText, setFilterText] = useState("");
   const [debouncedFilterText, setDebouncedFilterText] = useState("");
 
+  // Configuration error state
+  const [configError, setConfigError] = useState<string | null>(null);
+
   // Debounce filter text with 500ms delay
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -132,9 +135,26 @@ export default function AzureSLAPage() {
   };
 
   const handleFetchWorkItems = () => {
-    if (!project || !areaPath || !startDate || !endDate) {
+    // Validate all required fields
+    const missingFields = [];
+
+    if (!project) missingFields.push("Project");
+    if (!areaPath) missingFields.push("Area Path");
+    if (!startDate) missingFields.push("Start Date");
+    if (!endDate) missingFields.push("End Date");
+
+    if (missingFields.length > 0) {
+      setConfigError(
+        `Please fill in the following required fields: ${missingFields.join(
+          ", "
+        )}`
+      );
+
       return;
     }
+
+    // Clear any previous config errors
+    setConfigError(null);
 
     // Save to data store
     setAzureAreaPath(areaPath.trim());
@@ -479,6 +499,24 @@ export default function AzureSLAPage() {
               </Flex>
             </Box>
 
+            {/* Configuration Error Warning */}
+            {configError && (
+              <Box
+                bg="orange.50"
+                border="1px solid"
+                borderColor="orange.300"
+                borderRadius="md"
+                p={3}
+              >
+                <Flex align="center" gap={2}>
+                  <Text fontSize="lg">⚠️</Text>
+                  <Text color="orange.800" fontSize="sm" fontWeight="medium">
+                    {configError}
+                  </Text>
+                </Flex>
+              </Box>
+            )}
+
             <Flex justify="flex-end" gap={3}>
               <Button
                 onClick={handleFetchWorkItems}
@@ -536,7 +574,7 @@ export default function AzureSLAPage() {
               )}
             </Box>
             <Box overflowX="auto">
-              <Table.Root size="lg" variant="line">
+              <Table.Root size="sm" variant="line">
                 <Table.Header>
                   <Table.Row bg="gray.50">
                     <Table.ColumnHeader
@@ -699,11 +737,13 @@ export default function AzureSLAPage() {
                               P{item.priority}
                             </Badge>
                           </Table.Cell>
-                          <Table.Cell fontSize="sm" color="gray.600">
+                          <Table.Cell
+                            color="gray.600"
+                            title={new Date(item.createdDate).toLocaleString()}
+                          >
                             {new Date(item.createdDate).toLocaleDateString()}
                           </Table.Cell>
                           <Table.Cell
-                            fontSize="sm"
                             color="gray.600"
                             bg={
                               new Date() > new Date(item.workaroundDueDate) &&
@@ -717,13 +757,15 @@ export default function AzureSLAPage() {
                                 ? "bold"
                                 : undefined
                             }
+                            title={new Date(
+                              item.workaroundDueDate
+                            ).toLocaleString()}
                           >
                             {new Date(
                               item.workaroundDueDate
                             ).toLocaleDateString()}
                           </Table.Cell>
                           <Table.Cell
-                            fontSize="sm"
                             color="gray.600"
                             bg={
                               new Date() > new Date(item.solutionDueDate) &&
@@ -737,6 +779,9 @@ export default function AzureSLAPage() {
                                 ? "bold"
                                 : undefined
                             }
+                            title={new Date(
+                              item.solutionDueDate
+                            ).toLocaleString()}
                           >
                             {new Date(
                               item.solutionDueDate
@@ -804,7 +849,6 @@ export default function AzureSLAPage() {
                                           </Text>
                                         </Flex>
                                         <Text
-                                          fontSize="sm"
                                           color="gray.700"
                                           whiteSpace="pre-wrap"
                                           wordBreak="break-word"
@@ -905,7 +949,9 @@ export default function AzureSLAPage() {
                       <Table.ColumnHeader>ID</Table.ColumnHeader>
                       <Table.ColumnHeader>Title</Table.ColumnHeader>
                       <Table.ColumnHeader>Priority</Table.ColumnHeader>
+                      <Table.ColumnHeader>Created Date</Table.ColumnHeader>
                       <Table.ColumnHeader>Assigned To</Table.ColumnHeader>
+                      <Table.ColumnHeader>Status</Table.ColumnHeader>
                       <Table.ColumnHeader>Overdue Reason</Table.ColumnHeader>
                     </Table.Row>
                   </Table.Header>
@@ -958,7 +1004,32 @@ export default function AzureSLAPage() {
                               P{item.priority}
                             </Badge>
                           </Table.Cell>
+                          <Table.Cell
+                            color="gray.600"
+                            title={new Date(item.createdDate).toLocaleString()}
+                          >
+                            {new Date(item.createdDate).toLocaleDateString()}
+                          </Table.Cell>
                           <Table.Cell>{item.assignedTo}</Table.Cell>
+                          <Table.Cell>
+                            <Flex gap={1}>
+                              {item.hasWorkaround && (
+                                <Badge colorPalette="green" size="sm">
+                                  ✓ WA
+                                </Badge>
+                              )}
+                              {item.hasSolution && (
+                                <Badge colorPalette="blue" size="sm">
+                                  ✓ SOL
+                                </Badge>
+                              )}
+                              {!item.hasWorkaround && !item.hasSolution && (
+                                <Badge colorPalette="gray" size="sm">
+                                  Pending
+                                </Badge>
+                              )}
+                            </Flex>
+                          </Table.Cell>
                           <Table.Cell>
                             <Stack gap={1}>
                               {workaroundOverdue && (

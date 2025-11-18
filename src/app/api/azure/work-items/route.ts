@@ -14,6 +14,7 @@ interface WorkItemResponse {
   assignedTo: string;
   createdDate: string;
   priority: number;
+  type: string;
   comments: Array<{
     text: string;
     createdDate: string;
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
           [System.AreaPath] = '${areaPath}' AND
           [System.CreatedDate] >= '${formattedStartDate}' AND
           [System.CreatedDate] <= '${formattedEndDate}' AND
+          [System.WorkItemType] = 'Bug' AND
           [System.State] NOT IN ('Removed', 'Cancelled', 'Duplicated', 'Can not reproduce', 'Done')
         ORDER BY [System.CreatedDate] DESC
       `,
@@ -163,6 +165,7 @@ export async function POST(request: NextRequest) {
             id: item.id.toString(),
             title: fields["System.Title"] || "",
             state: fields["System.State"] || "",
+            type: fields["System.WorkItemType"] || "",
             assignedTo: fields["System.AssignedTo"]?.displayName || "",
             createdDate: fields["System.CreatedDate"] || "",
             priority: priorityInNumber(fields["Custom.Priority1"] || ""),
