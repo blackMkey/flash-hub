@@ -66,35 +66,50 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const endpoint = searchParams.get("endpoint");
-
-  if (!endpoint) {
-    return NextResponse.json(
-      { error: "Missing endpoint parameter" },
-      { status: 400 }
-    );
-  }
-
-  // Get token from session cookie
-  const auth = requireAuth(request);
-
-  if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
-
-  const jiraUrl = `${JIRA_BASE_URL}/rest/api/2/${endpoint}`;
-
   try {
     const body = await request.json();
+    const endpoint = body.endpoint;
+
+    if (!endpoint) {
+      return NextResponse.json(
+        { error: "Missing endpoint parameter" },
+        { status: 400 }
+      );
+    }
+
+    // Try to get token from Authorization header first (new flow)
+    const authHeader = request.headers.get("authorization");
+    let token: string;
+
+    if (authHeader?.startsWith("Bearer ")) {
+      // New flow: token from header
+      token = authHeader.substring(7);
+    } else {
+      // Old flow: token from session cookie
+      const auth = requireAuth(request);
+
+      if ("error" in auth) {
+        return NextResponse.json(
+          { error: auth.error },
+          { status: auth.status }
+        );
+      }
+
+      token = auth.token;
+    }
+
+    const jiraUrl = `${JIRA_BASE_URL}/rest/api/2/${endpoint}`;
+
+    // Remove endpoint from body before forwarding
+    const { endpoint: _, ...requestBody } = body;
 
     // Use browser-like headers to bypass Cloudflare protection
-    const headers = createJiraHeaders(auth.token);
+    const headers = createJiraHeaders(token);
 
     const response = await fetch(jiraUrl, {
       method: "POST",
       headers,
-      body: JSON.stringify(body),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {

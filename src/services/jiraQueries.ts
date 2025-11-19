@@ -25,6 +25,48 @@ export type {
 
 // ============= REACT QUERY HOOKS =============
 
+// Hook to verify Jira authentication - calls Jira directly
+export const useVerifyJiraAuth = () => {
+  return useMutation({
+    mutationFn: async (token: string) => {
+      const JIRA_BASE_URL = "https://insight.fsoft.com.vn/jira9";
+      const jiraUrl = `${JIRA_BASE_URL}/rest/api/2/myself`;
+
+      // Create browser-like headers to bypass Cloudflare
+      const headers: Record<string, string> = {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+      };
+
+      const response = await fetch(jiraUrl, {
+        method: "GET",
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to verify Jira authentication");
+      }
+
+      const user = await response.json();
+
+      // Add email based on username if not present
+      if (user.name && !user.emailAddress) {
+        user.emailAddress = user.name.toLowerCase() + "@fpt.com";
+      }
+
+      return user;
+    },
+  });
+};
+
 // Hook to fetch epic by key
 export const useEpic = (epicKey: string | null) => {
   return useQuery({
