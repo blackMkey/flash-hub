@@ -3,73 +3,100 @@
 import { useState } from "react";
 import { Button, Flex, Input, Spinner, Text } from "@chakra-ui/react";
 import { toaster } from "@/components/ui/toaster";
-import { useDataStore } from "@/stores";
+import { useAzureStore } from "@/stores/azureStore";
+import { useVerifyAzureAuth } from "@/services/azureQueries";
 
-interface messageProps {
-  title: string;
-  description: string;
-}
 interface BaseTokenManagerProps {
-  isConnected: boolean;
-  isLoading: boolean;
+  isLoading?: boolean;
   userName?: string;
-  onClear: (callback?: (message: messageProps) => void) => void;
 }
+
 interface JiraTokenManagerProps extends BaseTokenManagerProps {
   type: "jira";
+  isConnected: boolean;
   onSave: (token: string) => Promise<boolean>;
+  onClear: () => void;
 }
 
 interface AzureTokenManagerProps extends BaseTokenManagerProps {
   type: "azure";
-  onSave: (
-    token: string,
-    org: string,
-    onSuccess?: (message: messageProps) => void,
-    onError?: (message: messageProps) => void
-  ) => Promise<boolean>;
+  // Azure props are handled internally by the component
 }
 
 type TokenManagerProps = JiraTokenManagerProps | AzureTokenManagerProps;
 
-export default function TokenManager({
-  type,
-  isConnected,
-  isLoading,
-  userName,
-  onSave,
-  onClear,
-}: TokenManagerProps) {
-  const { azureOrg: storedOrg, setAzureOrg } = useDataStore();
+export default function TokenManager(props: TokenManagerProps) {
+  const { type } = props;
+
+  // Azure store (only used for Azure type)
+  const azureStore = useAzureStore();
+  const verifyAzureMutation = useVerifyAzureAuth();
+
   const [token, setToken] = useState("");
   const [userOrg, setUserOrg] = useState("");
   const [showInput, setShowInput] = useState(false);
 
   const displayName = type === "jira" ? "Jira" : "Azure DevOps";
 
-  // Use storedOrg if user hasn't entered a value yet
-  const org = userOrg || storedOrg || "";
+  // For Azure: use store values, for Jira: use props
+  const isConnected =
+    type === "azure"
+      ? azureStore.hasHydrated && azureStore.isAuthValid()
+      : props.isConnected;
+  const isLoading =
+    type === "azure" ? verifyAzureMutation.isPending : props.isLoading || false;
+
+  // Use stored org or user input
+  const org = type === "azure" ? userOrg || azureStore.org || "" : "";
 
   const handleSave = async () => {
     if (type === "azure") {
-      if (!!token.trim() && !!org.trim()) {
-        const success = await onSave(
-          token.trim(),
-          org.trim(),
-          toaster.success,
-          toaster.error
-        );
+      if (!token.trim() || !org.trim()) {
+        toaster.error({
+          title: "Missing Information",
+          description: "Please enter both Organization and PAT",
+        });
 
-        if (success) {
-          setAzureOrg(org.trim());
-          setToken("");
-          setUserOrg(""); // Clear user input
-          setShowInput(false);
-        }
+        return;
+      }
+
+      try {
+        // Save credentials first (needed for the mutation to work)
+        azureStore.setCredentials(token.trim(), org.trim());
+
+        // Verify connection via backend
+        await verifyAzureMutation.mutateAsync({
+          organization: org.trim(),
+          pat: token.trim(),
+        });
+
+        // Set verification timestamp on success
+        azureStore.setLastVerified(new Date());
+
+        toaster.success({
+          title: "Authorization successful",
+          description: "Successfully connected to Azure DevOps",
+        });
+
+        setToken("");
+        setUserOrg("");
+        setShowInput(false);
+      } catch (error) {
+        // Clear credentials on failure
+        azureStore.clearAuth();
+
+        toaster.error({
+          title: "Connection Failed",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Failed to connect to Azure DevOps",
+        });
       }
     } else {
+      // Jira flow (unchanged)
       if (token.trim()) {
-        const success = await onSave(token.trim());
+        const success = await props.onSave(token.trim());
 
         if (success) {
           setToken("");
@@ -84,9 +111,21 @@ export default function TokenManager({
   };
 
   const handleClear = () => {
-    onClear(toaster.info);
+    if (type === "azure") {
+      azureStore.clearAuth();
+      toaster.info({
+        title: "Disconnected",
+        description: "Successfully disconnected from Azure DevOps",
+      });
+    } else {
+      props.onClear();
+      toaster.info({
+        title: "Disconnected",
+        description: `Successfully disconnected from ${displayName}`,
+      });
+    }
     setToken("");
-    setUserOrg(""); // Clear user input
+    setUserOrg("");
     setShowInput(false);
   };
 
@@ -168,9 +207,20 @@ export default function TokenManager({
             <Text fontSize="sm" fontWeight="medium" color="green.700">
               🔗 Connected to {displayName}
             </Text>
-            {userName && (
+            {type === "azure" && azureStore.org && (
               <Text fontSize="sm" color="gray.600">
-                Welcome, <strong>{userName}</strong>!
+                Org: <strong>{azureStore.org}</strong>
+              </Text>
+            )}
+            {type === "azure" &&
+              azureStore.getDaysSinceVerification() !== null && (
+                <Text fontSize="xs" color="gray.500">
+                  (Verified {azureStore.getDaysSinceVerification()} days ago)
+                </Text>
+              )}
+            {type === "jira" && props.userName && (
+              <Text fontSize="sm" color="gray.600">
+                Welcome, <strong>{props.userName}</strong>!
               </Text>
             )}
             <Button

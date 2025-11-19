@@ -60,17 +60,25 @@ const priorityRules: Record<
 
 export async function POST(request: NextRequest) {
   try {
-    // Get Azure credentials from session
-    const azureAuth = getAzureAuthFromRequest(request);
+    // Get PAT from Authorization Bearer header
+    const authHeader = request.headers.get("authorization");
+    const org = request.headers.get("x-azure-organization");
 
-    if (!azureAuth) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "Azure authentication required" },
+        { error: "Azure authentication required - Missing Bearer token" },
         { status: 401 }
       );
     }
 
-    const { pat, org } = azureAuth;
+    if (!org) {
+      return NextResponse.json(
+        { error: "Azure organization required in X-Azure-Organization header" },
+        { status: 401 }
+      );
+    }
+
+    const pat = authHeader.substring(7); // Remove "Bearer " prefix
 
     const body: WorkItemsRequestBody = await request.json();
     const { project, areaPath, startDate, endDate } = body;

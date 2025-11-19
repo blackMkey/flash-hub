@@ -1,21 +1,28 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getAzureAuthFromRequest } from "../../libs/authMiddleware";
 
 export async function POST(request: NextRequest) {
   try {
-    // Get Azure credentials from session
-    const azureAuth = getAzureAuthFromRequest(request);
+    // Get PAT from Authorization Bearer header
+    const authHeader = request.headers.get("authorization");
+    const org = request.headers.get("x-azure-organization");
 
-    if (!azureAuth) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "Azure authentication required" },
+        { error: "Azure authentication required - Missing Bearer token" },
         { status: 401 }
       );
     }
 
-    const { pat, org } = azureAuth;
+    if (!org) {
+      return NextResponse.json(
+        { error: "Azure organization required in X-Azure-Organization header" },
+        { status: 401 }
+      );
+    }
 
-    // Create Basic Auth token
+    const pat = authHeader.substring(7); // Remove "Bearer " prefix
+
+    // Create Basic Auth token for Azure DevOps API
     const token = Buffer.from(`:${pat}`).toString("base64");
 
     // Verify PAT by checking if we can access the projects for this org

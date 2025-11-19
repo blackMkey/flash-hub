@@ -36,14 +36,17 @@ export interface FetchWorkItemsResponse {
  * Fetch work items from Azure DevOps
  */
 export const fetchAzureWorkItems = async (
-  params: FetchWorkItemsParams
+  params: FetchWorkItemsParams,
+  org: string,
+  pat: string
 ): Promise<FetchWorkItemsResponse> => {
   const response = await fetch("/api/azure/work-items", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${pat}`,
+      "X-Azure-Organization": org,
     },
-    credentials: "include",
     body: JSON.stringify(params),
   });
 
@@ -67,9 +70,10 @@ export const verifyAzureAuth = async (
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${pat}`,
+      "X-Azure-Organization": organization,
     },
-    credentials: "include",
-    body: JSON.stringify({ organization, pat }),
+    body: JSON.stringify({}),
   });
 
   if (!response.ok) {

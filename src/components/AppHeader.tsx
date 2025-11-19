@@ -3,7 +3,7 @@
 import { Button, Flex, Heading } from "@chakra-ui/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAzureAuthStore, useJiraAuthStore } from "@/stores";
+import { useJiraAuthStore } from "@/stores";
 import TokenManager from "./TokenManager";
 import { useEffect } from "react";
 import { toaster } from "@/components/ui/toaster";
@@ -26,23 +26,11 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
     checkExistingAuth: checkJiraAuth,
   } = useJiraAuthStore();
 
-  // Azure Auth store
-  const {
-    isConnected: azureConnected,
-    isLoading: azureLoading,
-    user: azureUser,
-    savePat: saveAzurePat,
-    clearAuth: clearAzureAuth,
-    checkExistingAuth: checkAzureAuth,
-  } = useAzureAuthStore();
-
   useEffect(() => {
-    if (isAzurePage) {
-      checkAzureAuth(toaster.success, toaster.error);
-    } else {
+    if (!isAzurePage) {
       checkJiraAuth(toaster.success, toaster.error);
     }
-  }, [checkAzureAuth, checkJiraAuth, isAzurePage]);
+  }, [checkJiraAuth, isAzurePage]);
 
   return (
     <>
@@ -65,14 +53,7 @@ export default function AppHeader({ pageTitle }: AppHeaderProps) {
             onClear={clearJiraAuth}
           />
         ) : (
-          <TokenManager
-            type="azure"
-            isConnected={azureConnected}
-            isLoading={azureLoading}
-            userName={azureUser?.displayName}
-            onSave={saveAzurePat}
-            onClear={clearAzureAuth}
-          />
+          <TokenManager type="azure" />
         )}
       </Flex>
     </>

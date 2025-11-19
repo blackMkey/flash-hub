@@ -6,6 +6,7 @@ import {
   type FetchWorkItemsParams,
   verifyAzureAuth,
 } from "./azureFetchers";
+import { useAzureStore } from "@/stores/azureStore";
 
 // Re-export types for convenience
 export type { AzureComment, AzureWorkItem, FetchWorkItemsParams };
@@ -19,10 +20,18 @@ export const useAzureWorkItems = (
   params: FetchWorkItemsParams | null,
   enabled = true
 ) => {
+  const { org, pat, isAuthValid } = useAzureStore();
+
   return useQuery({
-    queryKey: ["azureWorkItems", params],
-    queryFn: () => fetchAzureWorkItems(params!),
-    enabled: enabled && !!params?.project && !!params?.areaPath,
+    queryKey: ["azureWorkItems", params, org],
+    queryFn: () => fetchAzureWorkItems(params!, org, pat),
+    enabled:
+      enabled &&
+      !!params?.project &&
+      !!params?.areaPath &&
+      isAuthValid() &&
+      !!org &&
+      !!pat,
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: (failureCount, error) => {
       if (error instanceof Error && error.message.includes("authentication")) {
